@@ -173,7 +173,7 @@
     display:flex;
     flex-direction:column;
     align-items:center;
-    justify-content:space-between;
+    min-height:0;
   }
   .lbl-name{
     font-size:12px;
@@ -183,6 +183,7 @@
     color:#111;
     width:100%;
     word-break:break-word;
+    margin-bottom:2px;
   }
   .lbl-price{
     font-size:19px;
@@ -193,12 +194,16 @@
   .lbl-barcode{
     width:100%;
     display:flex;
+    align-items:center;
     justify-content:center;
+    flex:1;
+    min-height:0;
   }
   .lbl-barcode svg{
-    width:100%;
+    width:auto;
     max-width:100%;
     height:auto;
+    max-height:100%;
     display:block;
   }
   .lbl-store{
@@ -277,6 +282,7 @@
       margin:0;
       box-sizing:border-box;
       overflow:hidden;
+      min-height:0;
     }
     .topbar, .wrap > *:not(.printhost){ display:none !important; }
   }
@@ -371,7 +377,7 @@
 <script>
 const KEY_PREFIX = 'product:';
 // ⚠️ ЭНД өөрийн Apps Script-ийг deploy хийгээд гарч ирэх URL-г тавь (sheet-script.gs файлыг үз)
-const SHEET_API_URL = 'https://script.google.com/macros/s/AKfycbwWuik75rOivJVJEZoai_9gzFRd6KpS7MAV3J_q2-1qc6raGUdC62xXo98NUjceV4j_0Q/exec';
+const SHEET_API_URL = 'https://script.google.com/macros/s/AKfycbxSgOZ1qTfOqoqm0YvO185Qten_oIArCu1P7vZBeDJnCYVk1MwbtdcHDjd6DUtKhASt/exec';
 let db = {}; // barcode -> {name, price, weight}
 
 const barcodeInput = document.getElementById('barcode');
@@ -498,17 +504,19 @@ document.getElementById('saveBtn').addEventListener('click', async () => {
   statusMsg.style.color = '#8a8072';
   statusMsg.textContent = 'Хадгалж байна...';
   try {
-    await fetch(SHEET_API_URL, {
+    const res = await fetch(SHEET_API_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify({ action: 'save', barcode: code, name, price: record.price, weight: record.weight })
     });
+    const result = await res.json();
+    if (!result.ok) throw new Error(result.error || 'unknown');
     statusMsg.style.color = '#3f7d55';
     statusMsg.textContent = 'Хадгаллаа ✓';
     renderList();
   } catch (e) {
     statusMsg.style.color = '#a13a2f';
-    statusMsg.textContent = 'Хадгалахад алдаа гарлаа.';
+    statusMsg.textContent = 'Sheet рүү хадгалахад алдаа гарлаа: ' + e.message;
   }
 });
 
