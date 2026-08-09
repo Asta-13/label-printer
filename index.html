@@ -229,7 +229,7 @@
     margin-top:8px;
     min-height:16px;
   }
- 
+
   /* ---- PRINT ---- */
   @media print{
     @page{
@@ -251,32 +251,34 @@
     }
     .topbar, .wrap > *:not(.printhost){ display:none !important; }
   }
-  #printArea{ display:none; }
+  @media screen{
+    #printArea{ display:none; }
+  }
 </style>
 </head>
 <body>
- 
+
 <div class="topbar">
   <h1>Үнийн шошго хэвлэгч</h1>
   <span>80×60мм · GoDEX принтер</span>
 </div>
- 
+
 <div class="wrap">
- 
+
   <!-- LEFT: entry form -->
   <div class="card">
     <h2>Бараа оруулах</h2>
- 
+
     <label for="barcode">Баркод <span id="matchTag"></span></label>
     <div style="display:flex; gap:8px;">
       <input id="barcode" placeholder="Скэнердэх эсвэл гараар бичих" autocomplete="off" inputmode="numeric" style="flex:1;">
       <button type="button" id="camBtn" style="flex:none; width:48px; padding:0; background:#efe7d8; color:var(--amber-deep); border:1.5px solid #e0d2b3; border-radius:8px; font-size:20px;">📷</button>
     </div>
     <div class="hint">Скэнер холбоотой бол энд курсор байхад л шууд уншина, эсвэл камер товч дараад баркодоо камерт харуулна.</div>
- 
+
     <label for="name">Барааны нэр</label>
     <input id="name" placeholder="жишээ: Солнце Компот 580гр">
- 
+
     <div class="row2">
       <div>
         <label for="price">Үнэ (₮)</label>
@@ -287,20 +289,20 @@
         <input id="weight" placeholder="580гр">
       </div>
     </div>
- 
+
     <div class="preview-wrap">
       <div class="label80x60" id="previewLabel">
         <div class="empty-note">Шошгоны урьдчилсан харагдац</div>
       </div>
     </div>
- 
+
     <div class="btnbar">
       <button class="btn-save" id="saveBtn">Санд хадгалах</button>
       <button class="btn-print" id="printBtn">Шошго хэвлэх</button>
     </div>
     <div class="status" id="statusMsg"></div>
   </div>
- 
+
   <!-- RIGHT: saved products -->
   <div class="card">
     <h2>Хадгалсан бараанууд</h2>
@@ -309,9 +311,9 @@
       <div class="empty-list">Одоогоор хадгалсан бараа алга</div>
     </div>
   </div>
- 
+
 </div>
- 
+
 <!-- camera scan modal -->
 <div id="camModal" style="display:none; position:fixed; inset:0; background:rgba(20,17,13,0.92); z-index:999; flex-direction:column; align-items:center; justify-content:center;">
   <div style="width:100%; max-width:480px; padding:0 16px;">
@@ -323,18 +325,19 @@
     <div id="camStatus" style="color:#c9bfa9; font-size:12.5px; margin-top:10px; text-align:center;">Камер асааж байна...</div>
   </div>
 </div>
- 
+
 <!-- hidden print target -->
 <div id="printArea" class="printhost">
   <div class="lbl-name" id="pName"></div>
   <div class="lbl-price" id="pPrice"></div>
   <div class="lbl-barcode"><svg id="pBarcode"></svg></div>
 </div>
- 
+
 <script>
 const KEY_PREFIX = 'product:';
+const SHEET_API_URL = 'https://script.google.com/macros/s/AKfycbzTQ8zJbMLWD90Go0ABNvcN6FdTQqQ7FutHyn-7gqWObtHzlA3eddha-Gmj5vYZzQr5/exec';
 let db = {}; // barcode -> {name, price, weight}
- 
+
 const barcodeInput = document.getElementById('barcode');
 const nameInput = document.getElementById('name');
 const priceInput = document.getElementById('price');
@@ -342,35 +345,36 @@ const weightInput = document.getElementById('weight');
 const matchTag = document.getElementById('matchTag');
 const statusMsg = document.getElementById('statusMsg');
 const previewLabel = document.getElementById('previewLabel');
- 
+
 async function loadAll() {
+  statusMsg.style.color = '#8a8072';
+  statusMsg.textContent = 'Уншиж байна...';
   try {
-    const list = await window.storage.list('product:', false);
-    if (!list || !list.keys) return;
-    for (const k of list.keys) {
-      try {
-        const r = await window.storage.get(k, false);
-        if (r && r.value) {
-          const code = k.slice(KEY_PREFIX.length);
-          db[code] = JSON.parse(r.value);
-        }
-      } catch(e) {}
-    }
-  } catch(e) {}
+    const res = await fetch(SHEET_API_URL);
+    const rows = await res.json();
+    db = {};
+    rows.forEach(r => {
+      db[r.barcode] = { name: r.name, price: r.price, weight: r.weight };
+    });
+    statusMsg.textContent = '';
+  } catch (e) {
+    statusMsg.style.color = '#a13a2f';
+    statusMsg.textContent = 'Sheet-тэй холбогдоход алдаа гарлаа.';
+  }
   renderList();
 }
- 
+
 function renderPreview() {
   const name = nameInput.value.trim();
   const price = priceInput.value.trim();
   const weight = weightInput.value.trim();
   const code = barcodeInput.value.trim();
- 
+
   if (!name && !price && !code) {
     previewLabel.innerHTML = '<div class="empty-note">Шошгоны урьдчилсан харагдац</div>';
     return;
   }
- 
+
   let svgId = 'previewBarcodeSvg';
   previewLabel.innerHTML = `
     <div class="lbl-name">${escapeHtml(name || '—')}${weight ? ' ' + escapeHtml(weight) : ''}</div>
@@ -394,18 +398,18 @@ function renderPreview() {
     }
   }
 }
- 
+
 function guessFormat(code) {
   if (/^\d{13}$/.test(code)) return 'EAN13';
   if (/^\d{12}$/.test(code)) return 'UPC';
   if (/^\d{8}$/.test(code)) return 'EAN8';
   return 'CODE128';
 }
- 
+
 function escapeHtml(s) {
   return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
- 
+
 barcodeInput.addEventListener('input', () => {
   const code = barcodeInput.value.trim();
   if (code && db[code]) {
@@ -421,7 +425,7 @@ barcodeInput.addEventListener('input', () => {
   renderPreview();
 });
 [nameInput, priceInput, weightInput].forEach(el => el.addEventListener('input', renderPreview));
- 
+
 // Enter key on barcode field jumps to name (mimics scanner "Enter" behavior)
 barcodeInput.addEventListener('keydown', (e) => {
   if (e.key === 'Enter') {
@@ -429,7 +433,7 @@ barcodeInput.addEventListener('keydown', (e) => {
     nameInput.focus();
   }
 });
- 
+
 document.getElementById('saveBtn').addEventListener('click', async () => {
   const code = barcodeInput.value.trim();
   const name = nameInput.value.trim();
@@ -440,8 +444,14 @@ document.getElementById('saveBtn').addEventListener('click', async () => {
   }
   const record = { name, price: priceInput.value.trim(), weight: weightInput.value.trim() };
   db[code] = record;
+  statusMsg.style.color = '#8a8072';
+  statusMsg.textContent = 'Хадгалж байна...';
   try {
-    await window.storage.set(KEY_PREFIX + code, JSON.stringify(record), false);
+    await fetch(SHEET_API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action: 'save', barcode: code, name, price: record.price, weight: record.weight })
+    });
     statusMsg.style.color = '#3f7d55';
     statusMsg.textContent = 'Хадгаллаа ✓';
     renderList();
@@ -450,7 +460,7 @@ document.getElementById('saveBtn').addEventListener('click', async () => {
     statusMsg.textContent = 'Хадгалахад алдаа гарлаа.';
   }
 });
- 
+
 document.getElementById('printBtn').addEventListener('click', () => {
   const code = barcodeInput.value.trim();
   const name = nameInput.value.trim();
@@ -463,7 +473,7 @@ document.getElementById('printBtn').addEventListener('click', () => {
   }
   printLabel(code, name, price, weight);
 });
- 
+
 function printLabel(code, name, price, weight) {
   document.getElementById('pName').textContent = name + (weight ? ' ' + weight : '');
   document.getElementById('pPrice').textContent = price + '₮';
@@ -478,7 +488,7 @@ function printLabel(code, name, price, weight) {
   }
   window.print();
 }
- 
+
 function renderList(filter) {
   const wrap = document.getElementById('productListWrap');
   const codes = Object.keys(db).filter(c => {
@@ -486,12 +496,12 @@ function renderList(filter) {
     const f = filter.toLowerCase();
     return c.includes(f) || (db[c].name || '').toLowerCase().includes(f);
   }).sort((a,b) => (db[a].name||'').localeCompare(db[b].name||''));
- 
+
   if (codes.length === 0) {
     wrap.innerHTML = '<div class="empty-list">' + (filter ? 'Илэрц олдсонгүй' : 'Одоогоор хадгалсан бараа алга') + '</div>';
     return;
   }
- 
+
   let html = '<table><thead><tr><th>Нэр</th><th>Үнэ</th><th></th></tr></thead><tbody>';
   for (const code of codes) {
     const p = db[code];
@@ -506,7 +516,7 @@ function renderList(filter) {
   }
   html += '</tbody></table>';
   wrap.innerHTML = html;
- 
+
   wrap.querySelectorAll('.mini-print').forEach(btn => {
     btn.addEventListener('click', () => {
       const code = btn.getAttribute('data-code');
@@ -518,20 +528,24 @@ function renderList(filter) {
     btn.addEventListener('click', async () => {
       const code = btn.getAttribute('data-code');
       try {
-        await window.storage.delete(KEY_PREFIX + code, false);
+        await fetch(SHEET_API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ action: 'delete', barcode: code })
+        });
         delete db[code];
         renderList(document.getElementById('searchBox').value.trim());
       } catch (e) {}
     });
   });
 }
- 
+
 document.getElementById('searchBox').addEventListener('input', (e) => {
   renderList(e.target.value.trim());
 });
- 
+
 loadAll();
- 
+
 // ---- Camera barcode scanning (Quagga) ----
 const camBtn = document.getElementById('camBtn');
 const camModal = document.getElementById('camModal');
@@ -541,21 +555,21 @@ const camStatus = document.getElementById('camStatus');
 let scanning = false;
 let lastDetected = null;
 let lastDetectedCount = 0;
- 
+
 camBtn.addEventListener('click', startScan);
 camCloseBtn.addEventListener('click', stopScan);
- 
+
 function startScan() {
   camModal.style.display = 'flex';
   camStatus.textContent = 'Камер асааж байна...';
   lastDetected = null;
   lastDetectedCount = 0;
- 
+
   if (typeof Quagga === 'undefined') {
     camStatus.textContent = 'Камерын сан ачаалагдсангүй. Гараар оруулна уу.';
     return;
   }
- 
+
   Quagga.init({
     inputStream: {
       type: 'LiveStream',
@@ -583,15 +597,15 @@ function startScan() {
     scanning = true;
     camStatus.textContent = 'Хайж байна...';
   });
- 
+
   Quagga.onDetected(onDetected);
 }
- 
+
 function onDetected(result) {
   if (!scanning) return;
   const code = result && result.codeResult && result.codeResult.code;
   if (!code) return;
- 
+
   // require the same code twice in a row to avoid misreads
   if (code === lastDetected) {
     lastDetectedCount++;
@@ -599,7 +613,7 @@ function onDetected(result) {
     lastDetected = code;
     lastDetectedCount = 1;
   }
- 
+
   if (lastDetectedCount >= 2) {
     camStatus.textContent = 'Уншлаа: ' + code;
     barcodeInput.value = code;
@@ -607,7 +621,7 @@ function onDetected(result) {
     setTimeout(stopScan, 350);
   }
 }
- 
+
 function stopScan() {
   scanning = false;
   try { Quagga.offDetected(onDetected); } catch(e) {}
@@ -617,6 +631,6 @@ function stopScan() {
   nameInput.focus();
 }
 </script>
- 
+
 </body>
 </html>
