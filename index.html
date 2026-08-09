@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Үнийн шошго хэвлэгч</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/JsBarcode/3.11.5/JsBarcode.all.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
 <style>
@@ -157,32 +160,59 @@
     border-radius:2px;
     background:#fff;
     display:flex;
-    flex-direction:column;
-    justify-content:center;
-    align-items:center;
-    padding:4mm;
+    padding:3mm 4mm;
     transform:scale(1.55);
     transform-origin:center;
     margin:34px 0 30px;
+    overflow:hidden;
+    box-sizing:border-box;
+  }
+  .lbl-content{
+    width:100%;
+    height:100%;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:space-between;
   }
   .lbl-name{
-    font-size:13px;
+    font-size:12px;
     font-weight:700;
     text-align:center;
-    line-height:1.25;
+    line-height:1.22;
     color:#111;
-    max-width:100%;
+    width:100%;
     word-break:break-word;
   }
   .lbl-price{
-    font-size:20px;
+    font-size:19px;
     font-weight:800;
-    margin:3px 0 5px;
+    margin:2px 0;
     color:#111;
   }
+  .lbl-barcode{
+    width:100%;
+    display:flex;
+    justify-content:center;
+  }
   .lbl-barcode svg{
+    width:100%;
     max-width:100%;
     height:auto;
+    display:block;
+  }
+  .lbl-store{
+    width:100%;
+    text-align:center;
+    font-family:'Playfair Display', Georgia, serif;
+    font-style:italic;
+    font-weight:600;
+    font-size:11px;
+    letter-spacing:0.02em;
+    color:#111;
+    border-top:0.75px solid #ccc;
+    padding-top:2px;
+    margin-top:1px;
   }
   .empty-note{
     text-align:center;
@@ -243,11 +273,10 @@
       left:0; top:0;
       width:80mm; height:60mm;
       display:flex;
-      flex-direction:column;
-      justify-content:center;
-      align-items:center;
-      padding:4mm;
+      padding:3mm 4mm;
       margin:0;
+      box-sizing:border-box;
+      overflow:hidden;
     }
     .topbar, .wrap > *:not(.printhost){ display:none !important; }
   }
@@ -275,6 +304,9 @@
       <button type="button" id="camBtn" style="flex:none; width:48px; padding:0; background:#efe7d8; color:var(--amber-deep); border:1.5px solid #e0d2b3; border-radius:8px; font-size:20px;">📷</button>
     </div>
     <div class="hint">Скэнер холбоотой бол энд курсор байхад л шууд уншина, эсвэл камер товч дараад баркодоо камерт харуулна.</div>
+
+    <label for="storeName">Дэлгүүрийн нэр (шошгон дээр гарна)</label>
+    <input id="storeName" placeholder="жишээ: Urikhan-2 SuperMarket" value="Urikhan-2 SuperMarket">
 
     <label for="name">Барааны нэр</label>
     <input id="name" placeholder="жишээ: Солнце Компот 580гр">
@@ -328,23 +360,38 @@
 
 <!-- hidden print target -->
 <div id="printArea" class="printhost">
-  <div class="lbl-name" id="pName"></div>
-  <div class="lbl-price" id="pPrice"></div>
-  <div class="lbl-barcode"><svg id="pBarcode"></svg></div>
+  <div class="lbl-content">
+    <div class="lbl-name" id="pName"></div>
+    <div class="lbl-price" id="pPrice"></div>
+    <div class="lbl-barcode"><svg id="pBarcode"></svg></div>
+    <div class="lbl-store" id="pStore"></div>
+  </div>
 </div>
 
 <script>
 const KEY_PREFIX = 'product:';
-const SHEET_API_URL = 'https://script.google.com/macros/s/AKfycbxSgOZ1qTfOqoqm0YvO185Qten_oIArCu1P7vZBeDJnCYVk1MwbtdcHDjd6DUtKhASt/exec';
+// ⚠️ ЭНД өөрийн Apps Script-ийг deploy хийгээд гарч ирэх URL-г тавь (sheet-script.gs файлыг үз)
+const SHEET_API_URL = 'https://script.google.com/macros/s/AKfycbwWuik75rOivJVJEZoai_9gzFRd6KpS7MAV3J_q2-1qc6raGUdC62xXo98NUjceV4j_0Q/exec';
 let db = {}; // barcode -> {name, price, weight}
 
 const barcodeInput = document.getElementById('barcode');
 const nameInput = document.getElementById('name');
 const priceInput = document.getElementById('price');
 const weightInput = document.getElementById('weight');
+const storeNameInput = document.getElementById('storeName');
 const matchTag = document.getElementById('matchTag');
 const statusMsg = document.getElementById('statusMsg');
 const previewLabel = document.getElementById('previewLabel');
+
+// remember store name locally on this device
+try {
+  const savedStore = localStorage.getItem('storeName');
+  if (savedStore) storeNameInput.value = savedStore;
+} catch(e) {}
+storeNameInput.addEventListener('input', () => {
+  try { localStorage.setItem('storeName', storeNameInput.value); } catch(e) {}
+  renderPreview();
+});
 
 async function loadAll() {
   statusMsg.style.color = '#8a8072';
@@ -369,6 +416,7 @@ function renderPreview() {
   const price = priceInput.value.trim();
   const weight = weightInput.value.trim();
   const code = barcodeInput.value.trim();
+  const store = storeNameInput.value.trim();
 
   if (!name && !price && !code) {
     previewLabel.innerHTML = '<div class="empty-note">Шошгоны урьдчилсан харагдац</div>';
@@ -377,23 +425,26 @@ function renderPreview() {
 
   let svgId = 'previewBarcodeSvg';
   previewLabel.innerHTML = `
-    <div class="lbl-name">${escapeHtml(name || '—')}${weight ? ' ' + escapeHtml(weight) : ''}</div>
-    <div class="lbl-price">${price ? escapeHtml(price) + '₮' : ''}</div>
-    <div class="lbl-barcode"><svg id="${svgId}"></svg></div>
+    <div class="lbl-content">
+      <div class="lbl-name">${escapeHtml(name || '—')}${weight ? ' ' + escapeHtml(weight) : ''}</div>
+      <div class="lbl-price">${price ? escapeHtml(price) + '₮' : ''}</div>
+      <div class="lbl-barcode"><svg id="${svgId}"></svg></div>
+      <div class="lbl-store">${escapeHtml(store)}</div>
+    </div>
   `;
   if (code) {
     try {
       JsBarcode('#' + svgId, code, {
         format: guessFormat(code),
-        width: 1.6,
-        height: 40,
-        fontSize: 12,
+        width: 2,
+        height: 58,
+        fontSize: 13,
         margin: 0
       });
     } catch (e) {
       // invalid for chosen format, fall back to CODE128
       try {
-        JsBarcode('#' + svgId, code, { format: 'CODE128', width: 1.6, height: 40, fontSize: 12, margin: 0 });
+        JsBarcode('#' + svgId, code, { format: 'CODE128', width: 2, height: 58, fontSize: 13, margin: 0 });
       } catch(e2) {}
     }
   }
@@ -477,13 +528,14 @@ document.getElementById('printBtn').addEventListener('click', () => {
 function printLabel(code, name, price, weight) {
   document.getElementById('pName').textContent = name + (weight ? ' ' + weight : '');
   document.getElementById('pPrice').textContent = price + '₮';
+  document.getElementById('pStore').textContent = storeNameInput.value.trim();
   const svg = document.getElementById('pBarcode');
   svg.innerHTML = '';
   if (code) {
     try {
-      JsBarcode(svg, code, { format: guessFormat(code), width: 1.8, height: 45, fontSize: 13, margin: 0 });
+      JsBarcode(svg, code, { format: guessFormat(code), width: 2, height: 58, fontSize: 13, margin: 0 });
     } catch (e) {
-      try { JsBarcode(svg, code, { format: 'CODE128', width: 1.8, height: 45, fontSize: 13, margin: 0 }); } catch(e2){}
+      try { JsBarcode(svg, code, { format: 'CODE128', width: 2, height: 58, fontSize: 13, margin: 0 }); } catch(e2){}
     }
   }
   window.print();
