@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="mn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Үнийн шошго хэвлэгч</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/JsBarcode/3.11.5/JsBarcode.all.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
+<style>
+  :root{
+    --ink:#2b2621;
+    --ink-soft:#5a5248;
+    --paper:#faf7f2;
+    --panel:#ffffff;
+    --line:#e4ddd0;
+    --amber:#b8791f;
+    --amber-deep:#8f5c14;
+    --good:#3f7d55;
+    --radius:10px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+    background:var(--paper);
+    color:var(--ink);
+    -webkit-font-smoothing:antialiased;
+  }
+  .topbar{
+    background:linear-gradient(180deg,#2b2621,#3a332b);
+    color:#f2ece0;
+    padding:18px 20px;
+    display:flex;
+    align-items:baseline;
+    gap:10px;
+  }
+  .topbar h1{
+    font-size:19px;
+    margin:0;
+    font-weight:700;
+    letter-spacing:0.2px;
+  }
+  .topbar span{
+    font-size:12.5px;
+    color:#c9bfa9;
+  }
+  .wrap{
+    max-width:960px;
+    margin:0 auto;
+    padding:20px 16px 60px;
+    display:grid;
+    grid-template-columns:1fr;
+    gap:18px;
+  }
+  @media (min-width:760px){
+    .wrap{grid-template-columns: 1.1fr 0.9fr;}
+  }
+  .card{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:18px;
+  }
+  .card h2{
+    font-size:14px;
+    text-transform:uppercase;
+    letter-spacing:0.08em;
+    color:var(--ink-soft);
+    margin:0 0 14px;
+  }
+  label{
+    display:block;
+    font-size:13px;
+    color:var(--ink-soft);
+    margin:12px 0 5px;
+  }
+  label:first-of-type{margin-top:0;}
+  input{
+    width:100%;
+    font-size:16px;
+    padding:11px 12px;
+    border:1.5px solid var(--line);
+    border-radius:8px;
+    background:#fff;
+    color:var(--ink);
+    font-family:inherit;
+  }
+  input:focus{
+    outline:none;
+    border-color:var(--amber);
+  }
+  .hint{
+    font-size:12px;
+    color:#8a8072;
+    margin-top:4px;
+  }
+  .found-tag{
+    display:inline-block;
+    font-size:11.5px;
+    padding:2px 8px;
+    border-radius:20px;
+    background:#e9f3ec;
+    color:var(--good);
+    margin-left:8px;
+    font-weight:600;
+  }
+  .new-tag{
+    display:inline-block;
+    font-size:11.5px;
+    padding:2px 8px;
+    border-radius:20px;
+    background:#f5ece0;
+    color:var(--amber-deep);
+    margin-left:8px;
+    font-weight:600;
+  }
+  .row2{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:12px;
+  }
+  .btnbar{
+    display:flex;
+    gap:10px;
+    margin-top:18px;
+  }
+  button{
+    flex:1;
+    padding:13px 10px;
+    border-radius:8px;
+    border:none;
+    font-size:14.5px;
+    font-weight:700;
+    cursor:pointer;
+    font-family:inherit;
+  }
+  .btn-save{
+    background:#efe7d8;
+    color:var(--amber-deep);
+    border:1.5px solid #e0d2b3;
+  }
+  .btn-print{
+    background:var(--amber);
+    color:#fff;
+  }
+  .btn-print:hover{background:var(--amber-deep);}
+  .btn-save:hover{background:#e6dcc6;}
+  .preview-wrap{
+    display:flex;
+    justify-content:center;
+    padding:8px 0 4px;
+  }
+  .label80x60{
+    width:80mm;
+    height:60mm;
+    border:1.5px dashed #cbbfa4;
+    border-radius:2px;
+    background:#fff;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    align-items:center;
+    padding:4mm;
+    transform:scale(1.55);
+    transform-origin:center;
+    margin:34px 0 30px;
+  }
+  .lbl-name{
+    font-size:13px;
+    font-weight:700;
+    text-align:center;
+    line-height:1.25;
+    color:#111;
+    max-width:100%;
+    word-break:break-word;
+  }
+  .lbl-price{
+    font-size:20px;
+    font-weight:800;
+    margin:3px 0 5px;
+    color:#111;
+  }
+  .lbl-barcode svg{
+    max-width:100%;
+    height:auto;
+  }
+  .empty-note{
+    text-align:center;
+    color:#a99;
+    font-size:11.5px;
+  }
+  table{
+    width:100%;
+    border-collapse:collapse;
+    font-size:13.5px;
+  }
+  th,td{
+    text-align:left;
+    padding:8px 6px;
+    border-bottom:1px solid var(--line);
+  }
+  th{
+    color:var(--ink-soft);
+    font-weight:600;
+    font-size:12px;
+    text-transform:uppercase;
+    letter-spacing:0.04em;
+  }
+  td.num{color:var(--amber-deep);font-weight:700;white-space:nowrap;}
+  .row-actions{display:flex;gap:6px;}
+  .mini-btn{
+    flex:none;
+    padding:5px 9px;
+    font-size:12px;
+    border-radius:6px;
+  }
+  .mini-print{background:var(--amber);color:#fff;}
+  .mini-del{background:#f4e3e0;color:#a13a2f;}
+  .search{margin-bottom:12px;}
+  .empty-list{
+    text-align:center;
+    color:#a99;
+    font-size:13px;
+    padding:20px 0;
+  }
+  .status{
+    font-size:12.5px;
+    color:var(--good);
+    margin-top:8px;
+    min-height:16px;
+  }
+ 
+  /* ---- PRINT ---- */
+  @media print{
+    @page{
+      size: 80mm 60mm;
+      margin: 0;
+    }
+    body *{ visibility:hidden; }
+    #printArea, #printArea *{ visibility:visible; }
+    #printArea{
+      position:fixed;
+      left:0; top:0;
+      width:80mm; height:60mm;
+      display:flex;
+      flex-direction:column;
+      justify-content:center;
+      align-items:center;
+      padding:4mm;
+      margin:0;
+    }
+    .topbar, .wrap > *:not(.printhost){ display:none !important; }
+  }
+  #printArea{ display:none; }
+</style>
+</head>
+<body>
+ 
+<div class="topbar">
+  <h1>Үнийн шошго хэвлэгч</h1>
+  <span>80×60мм · GoDEX принтер</span>
+</div>
+ 
+<div class="wrap">
+ 
+  <!-- LEFT: entry form -->
+  <div class="card">
+    <h2>Бараа оруулах</h2>
+ 
+    <label for="barcode">Баркод <span id="matchTag"></span></label>
+    <div style="display:flex; gap:8px;">
+      <input id="barcode" placeholder="Скэнердэх эсвэл гараар бичих" autocomplete="off" inputmode="numeric" style="flex:1;">
+      <button type="button" id="camBtn" style="flex:none; width:48px; padding:0; background:#efe7d8; color:var(--amber-deep); border:1.5px solid #e0d2b3; border-radius:8px; font-size:20px;">📷</button>
+    </div>
+    <div class="hint">Скэнер холбоотой бол энд курсор байхад л шууд уншина, эсвэл камер товч дараад баркодоо камерт харуулна.</div>
+ 
+    <label for="name">Барааны нэр</label>
+    <input id="name" placeholder="жишээ: Солнце Компот 580гр">
+ 
+    <div class="row2">
+      <div>
+        <label for="price">Үнэ (₮)</label>
+        <input id="price" placeholder="8400" inputmode="numeric">
+      </div>
+      <div>
+        <label for="weight">Жин/хэмжээ (заавал биш)</label>
+        <input id="weight" placeholder="580гр">
+      </div>
+    </div>
+ 
+    <div class="preview-wrap">
+      <div class="label80x60" id="previewLabel">
+        <div class="empty-note">Шошгоны урьдчилсан харагдац</div>
+      </div>
+    </div>
+ 
+    <div class="btnbar">
+      <button class="btn-save" id="saveBtn">Санд хадгалах</button>
+      <button class="btn-print" id="printBtn">Шошго хэвлэх</button>
+    </div>
+    <div class="status" id="statusMsg"></div>
+  </div>
+ 
+  <!-- RIGHT: saved products -->
+  <div class="card">
+    <h2>Хадгалсан бараанууд</h2>
+    <input class="search" id="searchBox" placeholder="Нэр эсвэл баркодоор хайх...">
+    <div id="productListWrap">
+      <div class="empty-list">Одоогоор хадгалсан бараа алга</div>
+    </div>
+  </div>
+ 
+</div>
+ 
+<!-- camera scan modal -->
+<div id="camModal" style="display:none; position:fixed; inset:0; background:rgba(20,17,13,0.92); z-index:999; flex-direction:column; align-items:center; justify-content:center;">
+  <div style="width:100%; max-width:480px; padding:0 16px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+      <span style="color:#f2ece0; font-size:14px; font-weight:600;">Баркодоо камерын хүрээнд оруулна уу</span>
+      <button type="button" id="camCloseBtn" style="background:#3a332b; color:#f2ece0; border:none; border-radius:6px; padding:7px 12px; font-size:13px;">Хаах ✕</button>
+    </div>
+    <div id="camViewport" style="position:relative; width:100%; border-radius:10px; overflow:hidden; background:#000;"></div>
+    <div id="camStatus" style="color:#c9bfa9; font-size:12.5px; margin-top:10px; text-align:center;">Камер асааж байна...</div>
+  </div>
+</div>
+ 
+<!-- hidden print target -->
+<div id="printArea" class="printhost">
+  <div class="lbl-name" id="pName"></div>
+  <div class="lbl-price" id="pPrice"></div>
+  <div class="lbl-barcode"><svg id="pBarcode"></svg></div>
+</div>
+ 
+<script>
+const KEY_PREFIX = 'product:';
+let db = {}; // barcode -> {name, price, weight}
+ 
+const barcodeInput = document.getElementById('barcode');
+const nameInput = document.getElementById('name');
+const priceInput = document.getElementById('price');
+const weightInput = document.getElementById('weight');
+const matchTag = document.getElementById('matchTag');
+const statusMsg = document.getElementById('statusMsg');
+const previewLabel = document.getElementById('previewLabel');
+ 
+async function loadAll() {
+  try {
+    const list = await window.storage.list('product:', false);
+    if (!list || !list.keys) return;
+    for (const k of list.keys) {
+      try {
+        const r = await window.storage.get(k, false);
+        if (r && r.value) {
+          const code = k.slice(KEY_PREFIX.length);
+          db[code] = JSON.parse(r.value);
+        }
+      } catch(e) {}
+    }
+  } catch(e) {}
+  renderList();
+}
+ 
+function renderPreview() {
+  const name = nameInput.value.trim();
+  const price = priceInput.value.trim();
+  const weight = weightInput.value.trim();
+  const code = barcodeInput.value.trim();
+ 
+  if (!name && !price && !code) {
+    previewLabel.innerHTML = '<div class="empty-note">Шошгоны урьдчилсан харагдац</div>';
+    return;
+  }
+ 
+  let svgId = 'previewBarcodeSvg';
+  previewLabel.innerHTML = `
+    <div class="lbl-name">${escapeHtml(name || '—')}${weight ? ' ' + escapeHtml(weight) : ''}</div>
+    <div class="lbl-price">${price ? escapeHtml(price) + '₮' : ''}</div>
+    <div class="lbl-barcode"><svg id="${svgId}"></svg></div>
+  `;
+  if (code) {
+    try {
+      JsBarcode('#' + svgId, code, {
+        format: guessFormat(code),
+        width: 1.6,
+        height: 40,
+        fontSize: 12,
+        margin: 0
+      });
+    } catch (e) {
+      // invalid for chosen format, fall back to CODE128
+      try {
+        JsBarcode('#' + svgId, code, { format: 'CODE128', width: 1.6, height: 40, fontSize: 12, margin: 0 });
+      } catch(e2) {}
+    }
+  }
+}
+ 
+function guessFormat(code) {
+  if (/^\d{13}$/.test(code)) return 'EAN13';
+  if (/^\d{12}$/.test(code)) return 'UPC';
+  if (/^\d{8}$/.test(code)) return 'EAN8';
+  return 'CODE128';
+}
+ 
+function escapeHtml(s) {
+  return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+ 
+barcodeInput.addEventListener('input', () => {
+  const code = barcodeInput.value.trim();
+  if (code && db[code]) {
+    nameInput.value = db[code].name || '';
+    priceInput.value = db[code].price || '';
+    weightInput.value = db[code].weight || '';
+    matchTag.innerHTML = '<span class="found-tag">✓ Мэдэгдэж буй бараа</span>';
+  } else if (code) {
+    matchTag.innerHTML = '<span class="new-tag">Шинэ баркод</span>';
+  } else {
+    matchTag.innerHTML = '';
+  }
+  renderPreview();
+});
+[nameInput, priceInput, weightInput].forEach(el => el.addEventListener('input', renderPreview));
+ 
+// Enter key on barcode field jumps to name (mimics scanner "Enter" behavior)
+barcodeInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    nameInput.focus();
+  }
+});
+ 
+document.getElementById('saveBtn').addEventListener('click', async () => {
+  const code = barcodeInput.value.trim();
+  const name = nameInput.value.trim();
+  if (!code || !name) {
+    statusMsg.style.color = '#a13a2f';
+    statusMsg.textContent = 'Баркод болон нэрийг оруулна уу.';
+    return;
+  }
+  const record = { name, price: priceInput.value.trim(), weight: weightInput.value.trim() };
+  db[code] = record;
+  try {
+    await window.storage.set(KEY_PREFIX + code, JSON.stringify(record), false);
+    statusMsg.style.color = '#3f7d55';
+    statusMsg.textContent = 'Хадгаллаа ✓';
+    renderList();
+  } catch (e) {
+    statusMsg.style.color = '#a13a2f';
+    statusMsg.textContent = 'Хадгалахад алдаа гарлаа.';
+  }
+});
+ 
+document.getElementById('printBtn').addEventListener('click', () => {
+  const code = barcodeInput.value.trim();
+  const name = nameInput.value.trim();
+  const price = priceInput.value.trim();
+  const weight = weightInput.value.trim();
+  if (!name || !price) {
+    statusMsg.style.color = '#a13a2f';
+    statusMsg.textContent = 'Нэр болон үнийг оруулна уу.';
+    return;
+  }
+  printLabel(code, name, price, weight);
+});
+ 
+function printLabel(code, name, price, weight) {
+  document.getElementById('pName').textContent = name + (weight ? ' ' + weight : '');
+  document.getElementById('pPrice').textContent = price + '₮';
+  const svg = document.getElementById('pBarcode');
+  svg.innerHTML = '';
+  if (code) {
+    try {
+      JsBarcode(svg, code, { format: guessFormat(code), width: 1.8, height: 45, fontSize: 13, margin: 0 });
+    } catch (e) {
+      try { JsBarcode(svg, code, { format: 'CODE128', width: 1.8, height: 45, fontSize: 13, margin: 0 }); } catch(e2){}
+    }
+  }
+  window.print();
+}
+ 
+function renderList(filter) {
+  const wrap = document.getElementById('productListWrap');
+  const codes = Object.keys(db).filter(c => {
+    if (!filter) return true;
+    const f = filter.toLowerCase();
+    return c.includes(f) || (db[c].name || '').toLowerCase().includes(f);
+  }).sort((a,b) => (db[a].name||'').localeCompare(db[b].name||''));
+ 
+  if (codes.length === 0) {
+    wrap.innerHTML = '<div class="empty-list">' + (filter ? 'Илэрц олдсонгүй' : 'Одоогоор хадгалсан бараа алга') + '</div>';
+    return;
+  }
+ 
+  let html = '<table><thead><tr><th>Нэр</th><th>Үнэ</th><th></th></tr></thead><tbody>';
+  for (const code of codes) {
+    const p = db[code];
+    html += `<tr>
+      <td>${escapeHtml(p.name||'')}${p.weight ? ' <span style="color:#a99;font-size:12px;">('+escapeHtml(p.weight)+')</span>' : ''}<br><span style="color:#a99;font-size:11px;">${escapeHtml(code)}</span></td>
+      <td class="num">${p.price ? escapeHtml(p.price)+'₮' : '—'}</td>
+      <td class="row-actions">
+        <button class="mini-btn mini-print" data-code="${escapeHtml(code)}">Хэвлэх</button>
+        <button class="mini-btn mini-del" data-code="${escapeHtml(code)}">Устгах</button>
+      </td>
+    </tr>`;
+  }
+  html += '</tbody></table>';
+  wrap.innerHTML = html;
+ 
+  wrap.querySelectorAll('.mini-print').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const code = btn.getAttribute('data-code');
+      const p = db[code];
+      printLabel(code, p.name, p.price || '0', p.weight || '');
+    });
+  });
+  wrap.querySelectorAll('.mini-del').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const code = btn.getAttribute('data-code');
+      try {
+        await window.storage.delete(KEY_PREFIX + code, false);
+        delete db[code];
+        renderList(document.getElementById('searchBox').value.trim());
+      } catch (e) {}
+    });
+  });
+}
+ 
+document.getElementById('searchBox').addEventListener('input', (e) => {
+  renderList(e.target.value.trim());
+});
+ 
+loadAll();
+ 
+// ---- Camera barcode scanning (Quagga) ----
+const camBtn = document.getElementById('camBtn');
+const camModal = document.getElementById('camModal');
+const camViewport = document.getElementById('camViewport');
+const camCloseBtn = document.getElementById('camCloseBtn');
+const camStatus = document.getElementById('camStatus');
+let scanning = false;
+let lastDetected = null;
+let lastDetectedCount = 0;
+ 
+camBtn.addEventListener('click', startScan);
+camCloseBtn.addEventListener('click', stopScan);
+ 
+function startScan() {
+  camModal.style.display = 'flex';
+  camStatus.textContent = 'Камер асааж байна...';
+  lastDetected = null;
+  lastDetectedCount = 0;
+ 
+  if (typeof Quagga === 'undefined') {
+    camStatus.textContent = 'Камерын сан ачаалагдсангүй. Гараар оруулна уу.';
+    return;
+  }
+ 
+  Quagga.init({
+    inputStream: {
+      type: 'LiveStream',
+      target: camViewport,
+      constraints: {
+        facingMode: 'environment',
+        width: { ideal: 640 },
+        height: { ideal: 480 }
+      }
+    },
+    locator: { patchSize: 'medium', halfSample: true },
+    numOfWorkers: 2,
+    frequency: 10,
+    decoder: {
+      readers: ['ean_reader', 'ean_8_reader', 'code_128_reader', 'upc_reader', 'upc_e_reader']
+    },
+    locate: true
+  }, function (err) {
+    if (err) {
+      camStatus.textContent = 'Камерт хандах эрх өгөгдсөнгүй эсвэл камер олдсонгүй.';
+      console.error(err);
+      return;
+    }
+    Quagga.start();
+    scanning = true;
+    camStatus.textContent = 'Хайж байна...';
+  });
+ 
+  Quagga.onDetected(onDetected);
+}
+ 
+function onDetected(result) {
+  if (!scanning) return;
+  const code = result && result.codeResult && result.codeResult.code;
+  if (!code) return;
+ 
+  // require the same code twice in a row to avoid misreads
+  if (code === lastDetected) {
+    lastDetectedCount++;
+  } else {
+    lastDetected = code;
+    lastDetectedCount = 1;
+  }
+ 
+  if (lastDetectedCount >= 2) {
+    camStatus.textContent = 'Уншлаа: ' + code;
+    barcodeInput.value = code;
+    barcodeInput.dispatchEvent(new Event('input'));
+    setTimeout(stopScan, 350);
+  }
+}
+ 
+function stopScan() {
+  scanning = false;
+  try { Quagga.offDetected(onDetected); } catch(e) {}
+  try { Quagga.stop(); } catch (e) {}
+  camViewport.innerHTML = '';
+  camModal.style.display = 'none';
+  nameInput.focus();
+}
+</script>
+ 
+</body>
+</html>
