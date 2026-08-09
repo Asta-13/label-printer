@@ -199,6 +199,11 @@
     flex:1;
     min-height:0;
   }
+  .lbl-barcode canvas{
+    max-width:100%;
+    max-height:100%;
+    display:block;
+  }
   .lbl-barcode svg{
     width:auto;
     max-width:100%;
@@ -211,11 +216,10 @@
     text-align:center;
     font-family:'Playfair Display', Georgia, serif;
     font-style:italic;
-    font-weight:600;
-    font-size:11px;
+    font-weight:700;
+    font-size:14px;
     letter-spacing:0.02em;
     color:#111;
-    border-top:0.75px solid #ccc;
     padding-top:2px;
     margin-top:1px;
   }
@@ -287,7 +291,16 @@
     .topbar, .wrap > *:not(.printhost){ display:none !important; }
   }
   @media screen{
-    #printArea{ display:none; }
+    #printArea{
+      position:absolute;
+      left:-9999px;
+      top:0;
+      width:80mm;
+      height:60mm;
+      display:flex;
+      padding:3mm 4mm;
+      box-sizing:border-box;
+    }
   }
 </style>
 </head>
@@ -343,7 +356,7 @@
 
   <!-- RIGHT: saved products -->
   <div class="card">
-    <h2>Хадгалсан бараанууд</h2>
+    <h2 style="display:flex; align-items:center; justify-content:space-between;">Хадгалсан бараанууд <button type="button" id="refreshBtn" style="flex:none; font-size:12px; padding:5px 10px; border-radius:6px; border:1.5px solid #e0d2b3; background:#efe7d8; color:var(--amber-deep); font-weight:700; cursor:pointer;">⟳ Шинэчлэх</button></h2>
     <input class="search" id="searchBox" placeholder="Нэр эсвэл баркодоор хайх...">
     <div id="productListWrap">
       <div class="empty-list">Одоогоор хадгалсан бараа алга</div>
@@ -369,7 +382,7 @@
   <div class="lbl-content">
     <div class="lbl-name" id="pName"></div>
     <div class="lbl-price" id="pPrice"></div>
-    <div class="lbl-barcode"><svg id="pBarcode"></svg></div>
+    <div class="lbl-barcode"><canvas id="pBarcode"></canvas></div>
     <div class="lbl-store" id="pStore"></div>
   </div>
 </div>
@@ -377,7 +390,7 @@
 <script>
 const KEY_PREFIX = 'product:';
 // ⚠️ ЭНД өөрийн Apps Script-ийг deploy хийгээд гарч ирэх URL-г тавь (sheet-script.gs файлыг үз)
-const SHEET_API_URL = 'https://script.google.com/macros/s/AKfycbwWuik75rOivJVJEZoai_9gzFRd6KpS7MAV3J_q2-1qc6raGUdC62xXo98NUjceV4j_0Q/exec';
+const SHEET_API_URL = 'https://script.google.com/macros/s/AKfycbxSgOZ1qTfOqoqm0YvO185Qten_oIArCu1P7vZBeDJnCYVk1MwbtdcHDjd6DUtKhASt/exec';
 let db = {}; // barcode -> {name, price, weight}
 
 const barcodeInput = document.getElementById('barcode');
@@ -403,7 +416,7 @@ async function loadAll() {
   statusMsg.style.color = '#8a8072';
   statusMsg.textContent = 'Уншиж байна...';
   try {
-    const res = await fetch(SHEET_API_URL);
+    const res = await fetch(SHEET_API_URL + '?t=' + Date.now(), { cache: 'no-store' });
     const rows = await res.json();
     db = {};
     rows.forEach(r => {
@@ -429,28 +442,28 @@ function renderPreview() {
     return;
   }
 
-  let svgId = 'previewBarcodeSvg';
+  let canvasId = 'previewBarcodeCanvas';
   previewLabel.innerHTML = `
     <div class="lbl-content">
       <div class="lbl-name">${escapeHtml(name || '—')}${weight ? ' ' + escapeHtml(weight) : ''}</div>
       <div class="lbl-price">${price ? escapeHtml(price) + '₮' : ''}</div>
-      <div class="lbl-barcode"><svg id="${svgId}"></svg></div>
+      <div class="lbl-barcode"><canvas id="${canvasId}"></canvas></div>
       <div class="lbl-store">${escapeHtml(store)}</div>
     </div>
   `;
   if (code) {
     try {
-      JsBarcode('#' + svgId, code, {
+      JsBarcode('#' + canvasId, code, {
         format: guessFormat(code),
-        width: 2,
-        height: 58,
-        fontSize: 13,
+        width: 2.6,
+        height: 50,
+        fontSize: 14,
         margin: 0
       });
     } catch (e) {
       // invalid for chosen format, fall back to CODE128
       try {
-        JsBarcode('#' + svgId, code, { format: 'CODE128', width: 2, height: 58, fontSize: 13, margin: 0 });
+        JsBarcode('#' + canvasId, code, { format: 'CODE128', width: 2.6, height: 50, fontSize: 14, margin: 0 });
       } catch(e2) {}
     }
   }
@@ -537,16 +550,23 @@ function printLabel(code, name, price, weight) {
   document.getElementById('pName').textContent = name + (weight ? ' ' + weight : '');
   document.getElementById('pPrice').textContent = price + '₮';
   document.getElementById('pStore').textContent = storeNameInput.value.trim();
-  const svg = document.getElementById('pBarcode');
-  svg.innerHTML = '';
+  const canvas = document.getElementById('pBarcode');
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
   if (code) {
     try {
-      JsBarcode(svg, code, { format: guessFormat(code), width: 2, height: 58, fontSize: 13, margin: 0 });
+      JsBarcode(canvas, code, { format: guessFormat(code), width: 2.6, height: 50, fontSize: 14, margin: 0 });
     } catch (e) {
-      try { JsBarcode(svg, code, { format: 'CODE128', width: 2, height: 58, fontSize: 13, margin: 0 }); } catch(e2){}
+      try { JsBarcode(canvas, code, { format: 'CODE128', width: 2.6, height: 50, fontSize: 14, margin: 0 }); } catch(e2){}
     }
   }
-  window.print();
+  // Give the browser a couple of frames to actually commit the canvas drawing
+  // before opening the print dialog (helps avoid blank canvases on some mobile browsers)
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      window.print();
+    });
+  });
 }
 
 function renderList(filter) {
@@ -603,6 +623,8 @@ function renderList(filter) {
 document.getElementById('searchBox').addEventListener('input', (e) => {
   renderList(e.target.value.trim());
 });
+
+document.getElementById('refreshBtn').addEventListener('click', loadAll);
 
 loadAll();
 
