@@ -242,7 +242,7 @@
     letter-spacing:0.04em;
   }
   td.num{color:var(--amber-deep);font-weight:700;white-space:nowrap;}
-  .row-actions{display:flex;gap:6px;}
+  .row-actions{display:flex;gap:6px;flex-wrap:wrap;}
   .mini-btn{
     flex:none;
     padding:5px 9px;
@@ -250,7 +250,24 @@
     border-radius:6px;
   }
   .mini-print{background:var(--amber);color:#fff;}
+  .mini-edit{background:#e5ebf5;color:#2d4f8f;}
   .mini-del{background:#f4e3e0;color:#a13a2f;}
+  .mini-save{background:var(--good);color:#fff;}
+  .mini-cancel{background:#efece6;color:var(--ink-soft);}
+  .edit-field{
+    width:100%;
+    font-size:13.5px;
+    padding:6px 8px;
+    border:1.5px solid var(--amber);
+    border-radius:6px;
+    font-family:inherit;
+    box-sizing:border-box;
+  }
+  .edit-field.secondary{
+    border-color:var(--line);
+    font-size:12px;
+    margin-top:4px;
+  }
   .search{margin-bottom:12px;}
   .empty-list{
     text-align:center;
@@ -264,13 +281,40 @@
     margin-top:8px;
     min-height:16px;
   }
+  .settingsBox{
+    border:1.5px solid var(--line);
+    border-radius:8px;
+    padding:0 12px;
+    margin-bottom:16px;
+    background:#fbf9f5;
+  }
+  .settingsBox summary{
+    cursor:pointer;
+    padding:11px 0;
+    font-size:13px;
+    font-weight:700;
+    color:var(--amber-deep);
+    list-style:none;
+  }
+  .settingsBox summary::-webkit-details-marker{display:none;}
+  .settingsBox[open] summary{margin-bottom:2px;}
+  .settings-inner{padding:2px 0 14px;}
+  .settings-inner select{
+    width:100%;
+    font-size:14px;
+    padding:9px 10px;
+    border:1.5px solid var(--line);
+    border-radius:8px;
+    background:#fff;
+    color:var(--ink);
+    font-family:inherit;
+    margin-bottom:2px;
+  }
+  .settings-inner label{margin:10px 0 4px;}
+  .settings-inner .hint{margin-top:8px;}
 
   /* ---- PRINT ---- */
   @media print{
-    @page{
-      size: 80mm 60mm;
-      margin: 0;
-    }
     body *{ visibility:hidden; }
     #printArea, #printArea *{ visibility:visible; }
     #printArea{
@@ -299,12 +343,15 @@
     }
   }
 </style>
+<style id="dynamicPageSize">
+@media print{ @page{ size: 80mm 60mm; margin:0; } }
+</style>
 </head>
 <body>
 
 <div class="topbar">
   <h1>Үнийн шошго хэвлэгч</h1>
-  <span>80×60мм · GoDEX принтер</span>
+  <span>Хэмжээ, фонт өөрөө тохируулах боломжтой · Ямар ч принтер дээр хэвлэнэ</span>
 </div>
 
 <div class="wrap">
@@ -312,6 +359,52 @@
   <!-- LEFT: entry form -->
   <div class="card">
     <h2>Бараа оруулах</h2>
+
+    <details class="settingsBox" id="settingsBox">
+      <summary>⚙️ Шошгоны хэмжээ, фонт тохиргоо</summary>
+      <div class="settings-inner">
+        <label for="labelPreset">Шошгоны хэмжээ</label>
+        <select id="labelPreset">
+          <option value="80x60">80 × 60 мм (стандарт)</option>
+          <option value="58x40">58 × 40 мм</option>
+          <option value="50x30">50 × 30 мм</option>
+          <option value="40x30">40 × 30 мм</option>
+          <option value="30x20">30 × 20 мм</option>
+          <option value="custom">Өөрөө оруулах...</option>
+        </select>
+        <div class="row2">
+          <div>
+            <label for="labelWidth">Өргөн (мм)</label>
+            <input id="labelWidth" type="number" min="10" max="300" value="80" inputmode="decimal">
+          </div>
+          <div>
+            <label for="labelHeight">Өндөр (мм)</label>
+            <input id="labelHeight" type="number" min="10" max="300" value="60" inputmode="decimal">
+          </div>
+        </div>
+        <div class="row2">
+          <div>
+            <label for="fontName">Нэрний фонт (px)</label>
+            <input id="fontName" type="number" min="6" max="60" value="12" inputmode="decimal">
+          </div>
+          <div>
+            <label for="fontPrice">Үнийн фонт (px)</label>
+            <input id="fontPrice" type="number" min="6" max="80" value="19" inputmode="decimal">
+          </div>
+        </div>
+        <div class="row2">
+          <div>
+            <label for="fontBarcode">Баркод дугаарын фонт (px)</label>
+            <input id="fontBarcode" type="number" min="6" max="60" value="22" inputmode="decimal">
+          </div>
+          <div>
+            <label for="fontStore">Дэлгүүрийн нэрний фонт (px)</label>
+            <input id="fontStore" type="number" min="6" max="60" value="14" inputmode="decimal">
+          </div>
+        </div>
+        <div class="hint">Тохиргоо энэ төхөөрөмж дээр автоматаар хадгалагдаж, урьдчилсан харагдац болон хэвлэх үед шууд ашиглагдана. Ямар ч принтер эсвэл лэйбл принтер дээр яг тохируулсан хэмжээгээрээ гарна.</div>
+      </div>
+    </details>
 
     <label for="barcode">Баркод <span id="matchTag"></span></label>
     <div style="display:flex; gap:8px;">
@@ -408,6 +501,95 @@ storeNameInput.addEventListener('input', () => {
   renderPreview();
 });
 
+// ---- Dynamic label size & font settings (works with any printer / label size) ----
+const DEFAULT_LABEL_SETTINGS = { width:80, height:60, fontName:12, fontPrice:19, fontBarcode:22, fontStore:14 };
+let labelSettings = { ...DEFAULT_LABEL_SETTINGS };
+try {
+  const savedSettings = JSON.parse(localStorage.getItem('labelSettings') || 'null');
+  if (savedSettings) labelSettings = { ...DEFAULT_LABEL_SETTINGS, ...savedSettings };
+} catch(e) {}
+
+const labelPresetEl = document.getElementById('labelPreset');
+const labelWidthEl = document.getElementById('labelWidth');
+const labelHeightEl = document.getElementById('labelHeight');
+const fontNameEl = document.getElementById('fontName');
+const fontPriceEl = document.getElementById('fontPrice');
+const fontBarcodeEl = document.getElementById('fontBarcode');
+const fontStoreEl = document.getElementById('fontStore');
+const dynamicPageSizeEl = document.getElementById('dynamicPageSize');
+const printAreaEl = document.getElementById('printArea');
+
+const MM_TO_PX = 3.7795;
+
+function syncPresetDropdown() {
+  const key = labelSettings.width + 'x' + labelSettings.height;
+  const known = Array.from(labelPresetEl.options).some(o => o.value === key);
+  labelPresetEl.value = known ? key : 'custom';
+}
+
+function loadSettingsIntoInputs() {
+  labelWidthEl.value = labelSettings.width;
+  labelHeightEl.value = labelSettings.height;
+  fontNameEl.value = labelSettings.fontName;
+  fontPriceEl.value = labelSettings.fontPrice;
+  fontBarcodeEl.value = labelSettings.fontBarcode;
+  fontStoreEl.value = labelSettings.fontStore;
+  syncPresetDropdown();
+}
+
+function saveLabelSettings() {
+  try { localStorage.setItem('labelSettings', JSON.stringify(labelSettings)); } catch(e) {}
+}
+
+function computePreviewScale(w, h) {
+  let s = Math.min(1.55, 470 / (w * MM_TO_PX), 520 / (h * MM_TO_PX));
+  if (!isFinite(s) || s <= 0) s = 1;
+  return s;
+}
+
+function applyLabelDimensions() {
+  const w = labelSettings.width, h = labelSettings.height;
+  previewLabel.style.width = w + 'mm';
+  previewLabel.style.height = h + 'mm';
+  previewLabel.style.transform = 'scale(' + computePreviewScale(w, h) + ')';
+  printAreaEl.style.width = w + 'mm';
+  printAreaEl.style.height = h + 'mm';
+  dynamicPageSizeEl.textContent = '@media print{ @page{ size: ' + w + 'mm ' + h + 'mm; margin:0; } }';
+}
+
+function applyFontSizes() {
+  document.querySelectorAll('.lbl-name').forEach(el => el.style.fontSize = labelSettings.fontName + 'px');
+  document.querySelectorAll('.lbl-price').forEach(el => el.style.fontSize = labelSettings.fontPrice + 'px');
+  document.querySelectorAll('.lbl-barcode-num').forEach(el => el.style.fontSize = labelSettings.fontBarcode + 'px');
+  document.querySelectorAll('.lbl-store').forEach(el => el.style.fontSize = labelSettings.fontStore + 'px');
+}
+
+function onLabelSettingsChange() {
+  labelSettings.width = parseFloat(labelWidthEl.value) || DEFAULT_LABEL_SETTINGS.width;
+  labelSettings.height = parseFloat(labelHeightEl.value) || DEFAULT_LABEL_SETTINGS.height;
+  labelSettings.fontName = parseFloat(fontNameEl.value) || DEFAULT_LABEL_SETTINGS.fontName;
+  labelSettings.fontPrice = parseFloat(fontPriceEl.value) || DEFAULT_LABEL_SETTINGS.fontPrice;
+  labelSettings.fontBarcode = parseFloat(fontBarcodeEl.value) || DEFAULT_LABEL_SETTINGS.fontBarcode;
+  labelSettings.fontStore = parseFloat(fontStoreEl.value) || DEFAULT_LABEL_SETTINGS.fontStore;
+  saveLabelSettings();
+  syncPresetDropdown();
+  applyLabelDimensions();
+  applyFontSizes();
+}
+
+[labelWidthEl, labelHeightEl, fontNameEl, fontPriceEl, fontBarcodeEl, fontStoreEl].forEach(el => {
+  el.addEventListener('input', onLabelSettingsChange);
+});
+
+labelPresetEl.addEventListener('change', () => {
+  const val = labelPresetEl.value;
+  if (val === 'custom') return;
+  const parts = val.split('x');
+  labelWidthEl.value = parts[0];
+  labelHeightEl.value = parts[1];
+  onLabelSettingsChange();
+});
+
 async function loadAll() {
   statusMsg.style.color = '#8a8072';
   statusMsg.textContent = 'Уншиж байна...';
@@ -446,6 +628,7 @@ function renderPreview() {
       <div class="lbl-store">${escapeHtml(store)}</div>
     </div>
   `;
+  applyFontSizes();
 }
 
 function guessFormat(code) {
@@ -483,6 +666,24 @@ barcodeInput.addEventListener('keydown', (e) => {
   }
 });
 
+// Sheet руу нэг барааг хадгалах (шинэ болон засварыг хоёуланг нь дэмждэг — барааны
+// баркод хэдийн байгаа бол мөрийг update хийж, байхгүй бол шинээр нэмнэ)
+async function saveRecord(code, name, price, weight) {
+  try {
+    const res = await fetch(SHEET_API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action: 'save', barcode: code, name, price, weight })
+    });
+    const result = await res.json();
+    if (!result.ok) throw new Error(result.error || 'unknown');
+    db[code] = { name, price, weight };
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: e.message };
+  }
+}
+
 document.getElementById('saveBtn').addEventListener('click', async () => {
   const code = barcodeInput.value.trim();
   const name = nameInput.value.trim();
@@ -491,24 +692,16 @@ document.getElementById('saveBtn').addEventListener('click', async () => {
     statusMsg.textContent = 'Баркод болон нэрийг оруулна уу.';
     return;
   }
-  const record = { name, price: priceInput.value.trim(), weight: weightInput.value.trim() };
-  db[code] = record;
   statusMsg.style.color = '#8a8072';
   statusMsg.textContent = 'Хадгалж байна...';
-  try {
-    const res = await fetch(SHEET_API_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ action: 'save', barcode: code, name, price: record.price, weight: record.weight })
-    });
-    const result = await res.json();
-    if (!result.ok) throw new Error(result.error || 'unknown');
+  const result = await saveRecord(code, name, priceInput.value.trim(), weightInput.value.trim());
+  if (result.ok) {
     statusMsg.style.color = '#3f7d55';
     statusMsg.textContent = 'Хадгаллаа ✓';
-    renderList();
-  } catch (e) {
+    renderList(document.getElementById('searchBox').value.trim());
+  } else {
     statusMsg.style.color = '#a13a2f';
-    statusMsg.textContent = 'Sheet рүү хадгалахад алдаа гарлаа: ' + e.message;
+    statusMsg.textContent = 'Sheet рүү хадгалахад алдаа гарлаа: ' + result.error;
   }
 });
 
@@ -533,6 +726,8 @@ function printLabel(code, name, price, weight) {
   window.print();
 }
 
+let editingCode = null; // одоо засварлаж буй барааны баркод (эсвэл null)
+
 function renderList(filter) {
   const wrap = document.getElementById('productListWrap');
   const codes = Object.keys(db).filter(c => {
@@ -549,14 +744,32 @@ function renderList(filter) {
   let html = '<table><thead><tr><th>Нэр</th><th>Үнэ</th><th></th></tr></thead><tbody>';
   for (const code of codes) {
     const p = db[code];
-    html += `<tr>
-      <td>${escapeHtml(p.name||'')}${p.weight ? ' <span style="color:#a99;font-size:12px;">('+escapeHtml(p.weight)+')</span>' : ''}<br><span style="color:#a99;font-size:11px;">${escapeHtml(code)}</span></td>
-      <td class="num">${p.price ? escapeHtml(p.price)+'₮' : '—'}</td>
-      <td class="row-actions">
-        <button class="mini-btn mini-print" data-code="${escapeHtml(code)}">Хэвлэх</button>
-        <button class="mini-btn mini-del" data-code="${escapeHtml(code)}">Устгах</button>
-      </td>
-    </tr>`;
+    if (code === editingCode) {
+      html += `<tr data-code="${escapeHtml(code)}">
+        <td>
+          <input class="edit-field edit-name" type="text" value="${escapeHtml(p.name||'')}" placeholder="Барааны нэр">
+          <input class="edit-field secondary edit-weight" type="text" value="${escapeHtml(p.weight||'')}" placeholder="жин/хэмжээ (заавал биш)">
+          <div style="color:#a99;font-size:11px;margin-top:4px;">${escapeHtml(code)}</div>
+        </td>
+        <td>
+          <input class="edit-field edit-price" type="text" inputmode="numeric" value="${escapeHtml(p.price||'')}" placeholder="Үнэ">
+        </td>
+        <td class="row-actions">
+          <button class="mini-btn mini-save" data-code="${escapeHtml(code)}">Хадгалах</button>
+          <button class="mini-btn mini-cancel" data-code="${escapeHtml(code)}">Болих</button>
+        </td>
+      </tr>`;
+    } else {
+      html += `<tr>
+        <td>${escapeHtml(p.name||'')}${p.weight ? ' <span style="color:#a99;font-size:12px;">('+escapeHtml(p.weight)+')</span>' : ''}<br><span style="color:#a99;font-size:11px;">${escapeHtml(code)}</span></td>
+        <td class="num">${p.price ? escapeHtml(p.price)+'₮' : '—'}</td>
+        <td class="row-actions">
+          <button class="mini-btn mini-print" data-code="${escapeHtml(code)}">Хэвлэх</button>
+          <button class="mini-btn mini-edit" data-code="${escapeHtml(code)}">Засах</button>
+          <button class="mini-btn mini-del" data-code="${escapeHtml(code)}">Устгах</button>
+        </td>
+      </tr>`;
+    }
   }
   html += '</tbody></table>';
   wrap.innerHTML = html;
@@ -568,9 +781,50 @@ function renderList(filter) {
       printLabel(code, p.name, p.price || '0', p.weight || '');
     });
   });
+
+  wrap.querySelectorAll('.mini-edit').forEach(btn => {
+    btn.addEventListener('click', () => {
+      editingCode = btn.getAttribute('data-code');
+      renderList(document.getElementById('searchBox').value.trim());
+    });
+  });
+
+  wrap.querySelectorAll('.mini-cancel').forEach(btn => {
+    btn.addEventListener('click', () => {
+      editingCode = null;
+      renderList(document.getElementById('searchBox').value.trim());
+    });
+  });
+
+  wrap.querySelectorAll('.mini-save').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const code = btn.getAttribute('data-code');
+      const row = btn.closest('tr');
+      const newName = row.querySelector('.edit-name').value.trim();
+      const newPrice = row.querySelector('.edit-price').value.trim();
+      const newWeight = row.querySelector('.edit-weight').value.trim();
+      if (!newName) {
+        alert('Нэрийг хоосон үлдээж болохгүй.');
+        return;
+      }
+      btn.textContent = 'Хадгалж байна...';
+      btn.disabled = true;
+      const result = await saveRecord(code, newName, newPrice, newWeight);
+      if (result.ok) {
+        editingCode = null;
+        renderList(document.getElementById('searchBox').value.trim());
+      } else {
+        alert('Хадгалахад алдаа гарлаа: ' + result.error);
+        btn.textContent = 'Хадгалах';
+        btn.disabled = false;
+      }
+    });
+  });
+
   wrap.querySelectorAll('.mini-del').forEach(btn => {
     btn.addEventListener('click', async () => {
       const code = btn.getAttribute('data-code');
+      if (!confirm('"' + (db[code].name || code) + '" барааг устгах уу?')) return;
       try {
         await fetch(SHEET_API_URL, {
           method: 'POST',
@@ -589,6 +843,11 @@ document.getElementById('searchBox').addEventListener('input', (e) => {
 });
 
 document.getElementById('refreshBtn').addEventListener('click', loadAll);
+
+loadSettingsIntoInputs();
+applyLabelDimensions();
+applyFontSizes();
+renderPreview();
 
 loadAll();
 
