@@ -7,7 +7,6 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,600&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/JsBarcode/3.11.5/JsBarcode.all.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
 <style>
   :root{
@@ -173,7 +172,7 @@
     display:flex;
     flex-direction:column;
     align-items:center;
-    min-height:0;
+    justify-content:space-between;
   }
   .lbl-name{
     font-size:12px;
@@ -196,20 +195,17 @@
     display:flex;
     align-items:center;
     justify-content:center;
-    flex:1;
-    min-height:0;
   }
-  .lbl-barcode canvas{
+  .lbl-barcode-num{
+    font-family:'Courier New', monospace;
+    font-weight:800;
+    font-size:22px;
+    letter-spacing:0.08em;
+    color:#111;
+    text-align:center;
+    margin:2px 0;
     max-width:100%;
-    max-height:100%;
-    display:block;
-  }
-  .lbl-barcode svg{
-    width:auto;
-    max-width:100%;
-    height:auto;
-    max-height:100%;
-    display:block;
+    overflow-wrap:break-word;
   }
   .lbl-store{
     width:100%;
@@ -382,7 +378,7 @@
   <div class="lbl-content">
     <div class="lbl-name" id="pName"></div>
     <div class="lbl-price" id="pPrice"></div>
-    <div class="lbl-barcode"><canvas id="pBarcode"></canvas></div>
+    <div class="lbl-barcode"><div class="lbl-barcode-num" id="pBarcode"></div></div>
     <div class="lbl-store" id="pStore"></div>
   </div>
 </div>
@@ -442,31 +438,14 @@ function renderPreview() {
     return;
   }
 
-  let canvasId = 'previewBarcodeCanvas';
   previewLabel.innerHTML = `
     <div class="lbl-content">
       <div class="lbl-name">${escapeHtml(name || '—')}${weight ? ' ' + escapeHtml(weight) : ''}</div>
       <div class="lbl-price">${price ? escapeHtml(price) + '₮' : ''}</div>
-      <div class="lbl-barcode"><canvas id="${canvasId}"></canvas></div>
+      <div class="lbl-barcode"><div class="lbl-barcode-num">${escapeHtml(code)}</div></div>
       <div class="lbl-store">${escapeHtml(store)}</div>
     </div>
   `;
-  if (code) {
-    try {
-      JsBarcode('#' + canvasId, code, {
-        format: guessFormat(code),
-        width: 2.6,
-        height: 50,
-        fontSize: 14,
-        margin: 0
-      });
-    } catch (e) {
-      // invalid for chosen format, fall back to CODE128
-      try {
-        JsBarcode('#' + canvasId, code, { format: 'CODE128', width: 2.6, height: 50, fontSize: 14, margin: 0 });
-      } catch(e2) {}
-    }
-  }
 }
 
 function guessFormat(code) {
@@ -550,23 +529,8 @@ function printLabel(code, name, price, weight) {
   document.getElementById('pName').textContent = name + (weight ? ' ' + weight : '');
   document.getElementById('pPrice').textContent = price + '₮';
   document.getElementById('pStore').textContent = storeNameInput.value.trim();
-  const canvas = document.getElementById('pBarcode');
-  const ctx = canvas.getContext('2d');
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  if (code) {
-    try {
-      JsBarcode(canvas, code, { format: guessFormat(code), width: 2.6, height: 50, fontSize: 14, margin: 0 });
-    } catch (e) {
-      try { JsBarcode(canvas, code, { format: 'CODE128', width: 2.6, height: 50, fontSize: 14, margin: 0 }); } catch(e2){}
-    }
-  }
-  // Give the browser a couple of frames to actually commit the canvas drawing
-  // before opening the print dialog (helps avoid blank canvases on some mobile browsers)
-  requestAnimationFrame(() => {
-    requestAnimationFrame(() => {
-      window.print();
-    });
-  });
+  document.getElementById('pBarcode').textContent = code;
+  window.print();
 }
 
 function renderList(filter) {
