@@ -578,7 +578,7 @@
       <button type="button" id="camCloseBtn" style="background:#3a332b; color:#f2ece0; border:none; border-radius:6px; padding:7px 12px; font-size:13px;">Хаах ✕</button>
     </div>
     <div id="camViewport" style="position:relative; width:100%; border-radius:10px; overflow:hidden; background:#000;">
-      <div id="scanFrame" style="position:absolute; top:20%; left:10%; right:10%; bottom:20%; border:2px solid rgba(212,163,64,0.9); border-radius:6px; box-shadow:0 0 0 2000px rgba(0,0,0,0.35); pointer-events:none; z-index:5;"></div>
+      <div id="scanFrame" style="position:absolute; top:15%; left:8%; right:8%; bottom:15%; border:2px solid rgba(212,163,64,0.9); border-radius:6px; box-shadow:0 0 0 2000px rgba(0,0,0,0.35); pointer-events:none; z-index:5;"></div>
     </div>
     <div id="camStatus" style="color:#c9bfa9; font-size:12.5px; margin-top:10px; text-align:center;">Камер асааж байна...</div>
   </div>
@@ -1299,8 +1299,10 @@ function startScan() {
       // Дотоод боловсруулалтын дээд хэмжээ (камер өөрөө илүү өндөр нягтралаар авсан ч
       // Quagga үүнээс хэтрэхгүйгээр downscale хийж ажилладаг тул CPU ачаалал буурна)
       size: 640,
-      // Зөвхөн голын хайрцаг хэсгийг боловсруулснаар фрэйм тутмын ажил хэмнэгдэж хурд мэдэгдэхүйц сайжирна
-      area: { top: '20%', right: '10%', left: '10%', bottom: '20%' }
+      // Зөвхөн голын хайрцаг хэсгийг боловсруулснаар фрэйм тутмын ажил хэмнэгдэж хурд мэдэгдэхүйц сайжирна.
+      // ⚠️ Энэ хэмжээг дэлгэц дээрх шар чиглүүлэх хүрээнээс (#scanFrame) ЗОРИУДААР арай том авсан —
+      // баркод хэрэглэгчид харагдах хүрээнээс жоохон гадуур байсан ч барих боломжтой байлгах зорилготой
+      area: { top: '8%', right: '3%', left: '3%', bottom: '8%' }
     },
     locator: { patchSize: 'small', halfSample: true },
     numOfWorkers: Math.min(4, cores),
