@@ -172,7 +172,7 @@
     display:flex;
     flex-direction:column;
     align-items:center;
-    justify-content:space-between;
+    justify-content:center;
   }
   .lbl-name{
     font-size:12px;
@@ -287,6 +287,36 @@
     margin-top:4px;
   }
   .search{margin-bottom:12px;}
+  .cat-header td{
+    background:#f5f0e5;
+    color:var(--amber-deep);
+    font-weight:700;
+    font-size:11.5px;
+    text-transform:uppercase;
+    letter-spacing:0.05em;
+    padding:7px 6px;
+    border-bottom:1.5px solid #e0d2b3;
+  }
+  .mini-pvset{background:#3a332b;color:#f2ece0;}
+  .pvSettingsBox{
+    border:1px solid #4a4239;
+    border-radius:8px;
+    padding:0 12px;
+    margin-bottom:14px;
+    background:#26221c;
+  }
+  .pvSettingsBox summary{
+    cursor:pointer;
+    padding:9px 0;
+    font-size:12.5px;
+    font-weight:700;
+    color:#e0d2b3;
+    list-style:none;
+  }
+  .pvSettingsBox summary::-webkit-details-marker{display:none;}
+  .pvSettingsBox .settings-inner label{color:#c9bfa9;}
+  .pvSettingsBox .settings-inner input{background:#332d25;border-color:#4a4239;color:#f2ece0;}
+  .pvSettingsBox .hint{color:#8d8474;}
   .empty-list{
     text-align:center;
     color:#a99;
@@ -466,7 +496,17 @@
             <input id="fontStore" type="number" min="6" max="60" value="14" inputmode="decimal">
           </div>
         </div>
-        <div class="hint">Хэвлэхэд А4 цаасан дээр 8 шошго (2 багана × 4 мөр, шошго тус бүр ~80×60мм хэвтээ) багтаж, тасдах шугамтай гарна. Фонтын хэмжээ энэ төхөөрөмж дээр автоматаар хадгалагдана.</div>
+        <div class="row2">
+          <div>
+            <label for="lineHeight">Мөр хоорондын зай (нэрэнд)</label>
+            <input id="lineHeight" type="number" min="0.8" max="2.5" step="0.05" value="1.22" inputmode="decimal">
+          </div>
+          <div>
+            <label for="itemGap">Элементүүдийн хоорондын зай (px)</label>
+            <input id="itemGap" type="number" min="0" max="40" step="1" value="6" inputmode="decimal">
+          </div>
+        </div>
+        <div class="hint">Хэвлэхэд А4 цаасан дээр 8 шошго (2 багана × 4 мөр, шошго тус бүр ~80×60мм хэвтээ) багтаж, тасдах шугамтай гарна. Тохиргоо энэ төхөөрөмж дээр автоматаар хадгалагдана.</div>
       </div>
     </details>
 
@@ -482,6 +522,10 @@
 
     <label for="name">Барааны нэр</label>
     <input id="name" placeholder="жишээ: Солнце Компот 580гр">
+
+    <label for="category">Ангилал <span class="hint" style="display:inline;margin:0;">(шошгон дээр гарахгүй, зөвхөн жагсаалтад бүлэглэнэ)</span></label>
+    <input id="category" list="categoryList" placeholder="жишээ: Ундаа, Ус, Ахуйн бараа, Чихэр, Талх...">
+    <datalist id="categoryList"></datalist>
 
     <div class="row2">
       <div>
@@ -550,6 +594,43 @@
         <button type="button" id="previewPrintBtn" style="background:var(--amber); color:#fff; border:none; border-radius:6px; padding:9px 16px; font-size:13px; font-weight:700; cursor:pointer;">🖨️ Хэвлэх</button>
       </div>
     </div>
+
+    <details class="pvSettingsBox" id="pvSettingsBox">
+      <summary>⚙️ Фонт болон зайг энд тохируулах</summary>
+      <div class="settings-inner">
+        <div class="row2">
+          <div>
+            <label for="fontNamePV">Нэрний фонт (px)</label>
+            <input id="fontNamePV" type="number" min="6" max="60" value="12" inputmode="decimal">
+          </div>
+          <div>
+            <label for="fontPricePV">Үнийн фонт (px)</label>
+            <input id="fontPricePV" type="number" min="6" max="80" value="19" inputmode="decimal">
+          </div>
+        </div>
+        <div class="row2">
+          <div>
+            <label for="fontBarcodePV">Баркодын фонт (px)</label>
+            <input id="fontBarcodePV" type="number" min="6" max="60" value="22" inputmode="decimal">
+          </div>
+          <div>
+            <label for="fontStorePV">Дэлгүүрийн нэрний фонт (px)</label>
+            <input id="fontStorePV" type="number" min="6" max="60" value="14" inputmode="decimal">
+          </div>
+        </div>
+        <div class="row2">
+          <div>
+            <label for="lineHeightPV">Мөр хоорондын зай (нэрэнд)</label>
+            <input id="lineHeightPV" type="number" min="0.8" max="2.5" step="0.05" value="1.22" inputmode="decimal">
+          </div>
+          <div>
+            <label for="itemGapPV">Элементүүдийн хоорондын зай (px)</label>
+            <input id="itemGapPV" type="number" min="0" max="40" step="1" value="6" inputmode="decimal">
+          </div>
+        </div>
+      </div>
+    </details>
+
     <div id="previewPagesWrap"></div>
   </div>
 </div>
@@ -567,6 +648,7 @@ const barcodeInput = document.getElementById('barcode');
 const nameInput = document.getElementById('name');
 const priceInput = document.getElementById('price');
 const weightInput = document.getElementById('weight');
+const categoryInput = document.getElementById('category');
 const storeNameInput = document.getElementById('storeName');
 const matchTag = document.getElementById('matchTag');
 const statusMsg = document.getElementById('statusMsg');
@@ -582,24 +664,33 @@ storeNameInput.addEventListener('input', () => {
   renderPreview();
 });
 
-// ---- Font-size settings (label size itself is now fixed: A4, 6-up grid) ----
-const DEFAULT_LABEL_SETTINGS = { fontName:12, fontPrice:19, fontBarcode:22, fontStore:14 };
+// ---- Font-size / spacing settings (label size itself is fixed: A4, 8-up grid) ----
+// Тохиргоог хажуугийн самбар болон хэвлэхийн урьдчилан харах цонх хоёуланд нь
+// (хоёр өөр input бүлгээр) засварлаж болно — аль нэгийг өөрчлөхөд хоёул шинэчлэгдэнэ.
+const DEFAULT_LABEL_SETTINGS = { fontName:12, fontPrice:19, fontBarcode:22, fontStore:14, lineHeight:1.22, itemGap:6 };
 let labelSettings = { ...DEFAULT_LABEL_SETTINGS };
 try {
   const savedSettings = JSON.parse(localStorage.getItem('labelSettings') || 'null');
   if (savedSettings) labelSettings = { ...DEFAULT_LABEL_SETTINGS, ...savedSettings };
 } catch(e) {}
 
-const fontNameEl = document.getElementById('fontName');
-const fontPriceEl = document.getElementById('fontPrice');
-const fontBarcodeEl = document.getElementById('fontBarcode');
-const fontStoreEl = document.getElementById('fontStore');
+// key -> [sidebar-id, preview-modal-id]
+const SETTINGS_FIELD_IDS = {
+  fontName: ['fontName', 'fontNamePV'],
+  fontPrice: ['fontPrice', 'fontPricePV'],
+  fontBarcode: ['fontBarcode', 'fontBarcodePV'],
+  fontStore: ['fontStore', 'fontStorePV'],
+  lineHeight: ['lineHeight', 'lineHeightPV'],
+  itemGap: ['itemGap', 'itemGapPV']
+};
 
 function loadSettingsIntoInputs() {
-  fontNameEl.value = labelSettings.fontName;
-  fontPriceEl.value = labelSettings.fontPrice;
-  fontBarcodeEl.value = labelSettings.fontBarcode;
-  fontStoreEl.value = labelSettings.fontStore;
+  Object.keys(SETTINGS_FIELD_IDS).forEach(key => {
+    SETTINGS_FIELD_IDS[key].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.value = labelSettings[key];
+    });
+  });
 }
 
 function saveLabelSettings() {
@@ -607,23 +698,31 @@ function saveLabelSettings() {
 }
 
 function applyFontSizes() {
-  document.querySelectorAll('.lbl-name').forEach(el => el.style.fontSize = labelSettings.fontName + 'px');
+  document.querySelectorAll('.lbl-name').forEach(el => {
+    el.style.fontSize = labelSettings.fontName + 'px';
+    el.style.lineHeight = labelSettings.lineHeight;
+  });
   document.querySelectorAll('.lbl-price').forEach(el => el.style.fontSize = labelSettings.fontPrice + 'px');
   document.querySelectorAll('.lbl-barcode-num').forEach(el => el.style.fontSize = labelSettings.fontBarcode + 'px');
   document.querySelectorAll('.lbl-store').forEach(el => el.style.fontSize = labelSettings.fontStore + 'px');
+  document.querySelectorAll('.lbl-content').forEach(el => el.style.gap = labelSettings.itemGap + 'px');
 }
 
-function onLabelSettingsChange() {
-  labelSettings.fontName = parseFloat(fontNameEl.value) || DEFAULT_LABEL_SETTINGS.fontName;
-  labelSettings.fontPrice = parseFloat(fontPriceEl.value) || DEFAULT_LABEL_SETTINGS.fontPrice;
-  labelSettings.fontBarcode = parseFloat(fontBarcodeEl.value) || DEFAULT_LABEL_SETTINGS.fontBarcode;
-  labelSettings.fontStore = parseFloat(fontStoreEl.value) || DEFAULT_LABEL_SETTINGS.fontStore;
+function onLabelSettingsChange(key, value) {
+  labelSettings[key] = isNaN(value) ? DEFAULT_LABEL_SETTINGS[key] : value;
   saveLabelSettings();
+  loadSettingsIntoInputs();
   applyFontSizes();
+  renderPreview();
+  const previewModalEl = document.getElementById('previewModal');
+  if (previewModalEl && previewModalEl.style.display !== 'none') renderPrintPreview();
 }
 
-[fontNameEl, fontPriceEl, fontBarcodeEl, fontStoreEl].forEach(el => {
-  el.addEventListener('input', onLabelSettingsChange);
+Object.keys(SETTINGS_FIELD_IDS).forEach(key => {
+  SETTINGS_FIELD_IDS[key].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('input', () => onLabelSettingsChange(key, parseFloat(el.value)));
+  });
 });
 
 async function loadAll() {
@@ -634,14 +733,24 @@ async function loadAll() {
     const rows = await res.json();
     db = {};
     rows.forEach(r => {
-      db[r.barcode] = { name: r.name, price: r.price, weight: r.weight, printed: !!r.printed };
+      db[r.barcode] = { name: r.name, price: r.price, weight: r.weight, printed: !!r.printed, category: r.category || '' };
     });
     statusMsg.textContent = '';
   } catch (e) {
     statusMsg.style.color = '#a13a2f';
     statusMsg.textContent = 'Sheet-тэй холбогдоход алдаа гарлаа.';
   }
+  updateCategoryDatalist();
   renderList();
+}
+
+// Одоо байгаа бүх ангиллын нэрсийг цуглуулж datalist-д тавьж өгнө (гараар шинээр ангилал
+// нэмэх боломжтой хэвээр, зөвхөн өмнө орсон ангиллуудыг санал болгож байгаа хэрэг)
+function updateCategoryDatalist() {
+  const dl = document.getElementById('categoryList');
+  if (!dl) return;
+  const cats = Array.from(new Set(Object.values(db).map(p => (p.category || '').trim()).filter(Boolean))).sort();
+  dl.innerHTML = cats.map(c => `<option value="${escapeHtml(c)}"></option>`).join('');
 }
 
 function renderPreview() {
@@ -684,6 +793,7 @@ barcodeInput.addEventListener('input', () => {
     nameInput.value = db[code].name || '';
     priceInput.value = db[code].price || '';
     weightInput.value = db[code].weight || '';
+    categoryInput.value = db[code].category || '';
     matchTag.innerHTML = '<span class="found-tag">✓ Мэдэгдэж буй бараа</span>';
   } else if (code) {
     matchTag.innerHTML = '<span class="new-tag">Шинэ баркод</span>';
@@ -705,19 +815,23 @@ barcodeInput.addEventListener('keydown', (e) => {
 // Sheet руу нэг барааг хадгалах (шинэ болон засварыг хоёуланг нь дэмждэг — барааны
 // баркод хэдийн байгаа бол мөрийг update хийж, байхгүй бол шинээр нэмнэ)
 // printed параметрийг өгөхгүй бол одоо байгаа "хэвлэгдсэн" статусыг хэвээр хадгална
-async function saveRecord(code, name, price, weight, printed) {
+async function saveRecord(code, name, price, weight, printed, category) {
   if (printed === undefined) {
     printed = db[code] ? !!db[code].printed : false;
+  }
+  if (category === undefined) {
+    category = db[code] ? (db[code].category || '') : '';
   }
   try {
     const res = await fetch(SHEET_API_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ action: 'save', barcode: code, name, price, weight, printed: printed ? '1' : '' })
+      body: JSON.stringify({ action: 'save', barcode: code, name, price, weight, printed: printed ? '1' : '', category })
     });
     const result = await res.json();
     if (!result.ok) throw new Error(result.error || 'unknown');
-    db[code] = { name, price, weight, printed };
+    db[code] = { name, price, weight, printed, category };
+    updateCategoryDatalist();
     return { ok: true };
   } catch (e) {
     return { ok: false, error: e.message };
@@ -734,12 +848,15 @@ document.getElementById('saveBtn').addEventListener('click', async () => {
   }
   statusMsg.style.color = '#8a8072';
   statusMsg.textContent = 'Хадгалж байна...';
-  const result = await saveRecord(code, name, priceInput.value.trim(), weightInput.value.trim());
+  const categoryVal = categoryInput.value.trim();
+  const result = await saveRecord(code, name, priceInput.value.trim(), weightInput.value.trim(), undefined, categoryVal);
   if (result.ok) {
     statusMsg.style.color = '#3f7d55';
     statusMsg.textContent = 'Хадгаллаа ✓';
     renderList(document.getElementById('searchBox').value.trim());
-    // Маягтыг цэвэрлэж, дараагийн барааг шинээр оруулахад бэлэн болгоно
+    // Маягтыг цэвэрлэж, дараагийн барааг шинээр оруулахад бэлэн болгоно.
+    // Ангилалыг санаатайгаар цэвэрлэхгүй үлдээв — ижил ангиллын хэд хэдэн бараа
+    // дараалан оруулахад дахин бичих шаардлагагүй болгох зорилготой.
     barcodeInput.value = '';
     nameInput.value = '';
     priceInput.value = '';
@@ -951,15 +1068,44 @@ function renderList(filter) {
     return;
   }
 
-  let html = '<table><thead><tr><th style="width:30px;"><input type="checkbox" id="selectAllCheck"></th><th>Нэр</th><th>Үнэ</th><th></th></tr></thead><tbody>';
+  // Ангилалаар бүлэглэнэ (ангилалгүй бараа "Ангилалгүй" бүлэгт, хамгийн сүүлд орно)
+  const NO_CAT = 'Ангилалгүй';
+  const groups = new Map();
   for (const code of codes) {
-    const p = db[code];
-    if (code === editingCode) {
-      html += `<tr data-code="${escapeHtml(code)}">
+    const cat = (db[code].category || '').trim() || NO_CAT;
+    if (!groups.has(cat)) groups.set(cat, []);
+    groups.get(cat).push(code);
+  }
+  const groupNames = Array.from(groups.keys()).sort((a, b) => {
+    if (a === NO_CAT) return 1;
+    if (b === NO_CAT) return -1;
+    return a.localeCompare(b);
+  });
+  const orderedCodes = [];
+  groupNames.forEach(g => orderedCodes.push(...groups.get(g)));
+
+  let html = '<table><thead><tr><th style="width:30px;"><input type="checkbox" id="selectAllCheck"></th><th>Нэр</th><th>Үнэ</th><th></th></tr></thead><tbody>';
+  for (const g of groupNames) {
+    html += `<tr class="cat-header"><td colspan="4">${escapeHtml(g)} (${groups.get(g).length})</td></tr>`;
+    for (const code of groups.get(g)) {
+      html += renderProductRow(code);
+    }
+  }
+  html += '</tbody></table>';
+  wrap.innerHTML = html;
+  updatePrintSelectedBtn();
+  bindProductRowEvents(orderedCodes);
+}
+
+function renderProductRow(code) {
+  const p = db[code];
+  if (code === editingCode) {
+    return `<tr data-code="${escapeHtml(code)}">
         <td></td>
         <td>
           <input class="edit-field edit-name" type="text" value="${escapeHtml(p.name||'')}" placeholder="Барааны нэр">
           <input class="edit-field secondary edit-weight" type="text" value="${escapeHtml(p.weight||'')}" placeholder="жин/хэмжээ (заавал биш)">
+          <input class="edit-field secondary edit-category" type="text" list="categoryList" value="${escapeHtml(p.category||'')}" placeholder="Ангилал (заавал биш)">
           <div style="color:#a99;font-size:11px;margin-top:4px;">${escapeHtml(code)}</div>
         </td>
         <td>
@@ -970,8 +1116,8 @@ function renderList(filter) {
           <button class="mini-btn mini-cancel" data-code="${escapeHtml(code)}">Болих</button>
         </td>
       </tr>`;
-    } else {
-      html += `<tr>
+  }
+  return `<tr>
         <td><input type="checkbox" class="row-check" data-code="${escapeHtml(code)}" ${selectedCodes.has(code) ? 'checked' : ''}></td>
         <td>${escapeHtml(p.name||'')}${p.weight ? ' <span style="color:#a99;font-size:12px;">('+escapeHtml(p.weight)+')</span>' : ''}<br><span style="color:#a99;font-size:11px;">${escapeHtml(code)}</span></td>
         <td class="num">${p.price ? escapeHtml(p.price)+'₮' : '—'}</td>
@@ -982,11 +1128,10 @@ function renderList(filter) {
           <button class="mini-btn mini-del" data-code="${escapeHtml(code)}">Устгах</button>
         </td>
       </tr>`;
-    }
-  }
-  html += '</tbody></table>';
-  wrap.innerHTML = html;
-  updatePrintSelectedBtn();
+}
+
+function bindProductRowEvents(codes) {
+  const wrap = document.getElementById('productListWrap');
 
   const selectAllCheck = document.getElementById('selectAllCheck');
   if (selectAllCheck) {
@@ -1055,13 +1200,14 @@ function renderList(filter) {
       const newName = row.querySelector('.edit-name').value.trim();
       const newPrice = row.querySelector('.edit-price').value.trim();
       const newWeight = row.querySelector('.edit-weight').value.trim();
+      const newCategory = row.querySelector('.edit-category').value.trim();
       if (!newName) {
         alert('Нэрийг хоосон үлдээж болохгүй.');
         return;
       }
       btn.textContent = 'Хадгалж байна...';
       btn.disabled = true;
-      const result = await saveRecord(code, newName, newPrice, newWeight);
+      const result = await saveRecord(code, newName, newPrice, newWeight, undefined, newCategory);
       if (result.ok) {
         editingCode = null;
         renderList(document.getElementById('searchBox').value.trim());
