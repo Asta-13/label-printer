@@ -254,6 +254,24 @@
   .mini-del{background:#f4e3e0;color:#a13a2f;}
   .mini-save{background:var(--good);color:#fff;}
   .mini-cancel{background:#efece6;color:var(--ink-soft);}
+  .tabbar{display:flex; gap:6px; margin-bottom:10px;}
+  .tab-btn{
+    flex:1;
+    padding:8px 6px;
+    font-size:13px;
+    font-weight:700;
+    border:1.5px solid var(--line);
+    background:#fbf9f5;
+    color:var(--ink-soft);
+    border-radius:8px;
+    cursor:pointer;
+  }
+  .tab-btn.active{
+    background:var(--amber);
+    color:#fff;
+    border-color:var(--amber);
+  }
+  .mini-undo{background:#e5ebf5;color:#2d4f8f;}
   .edit-field{
     width:100%;
     font-size:13.5px;
@@ -338,6 +356,76 @@
     box-sizing:border-box;
     overflow:hidden;
   }
+
+  /* ---- Print preview modal (screen only) ---- */
+  .previewPage{
+    width:100%;
+    max-width:380px;
+    aspect-ratio:160/240;
+    display:grid;
+    grid-template-columns:repeat(2, 1fr);
+    grid-template-rows:repeat(4, 1fr);
+    margin:0 auto 22px;
+    background:#fff;
+    border-radius:4px;
+    box-shadow:0 4px 18px rgba(0,0,0,0.35);
+  }
+  .previewPageLabel{
+    color:#c9bfa9;
+    font-size:12px;
+    text-align:center;
+    margin:0 auto 8px;
+    font-weight:600;
+  }
+  .previewCell{
+    border:1px dashed #ccc;
+    display:flex;
+    padding:3mm 4mm;
+    box-sizing:border-box;
+    overflow:hidden;
+    cursor:pointer;
+    position:relative;
+    transition:background 0.15s;
+  }
+  .previewCell:hover{ background:#fdf8ee; }
+  .previewCell.editing{ cursor:default; background:#fdf8ee; }
+  .previewCell .lbl-name, .previewCell .lbl-price, .previewCell .lbl-barcode-num, .previewCell .lbl-store{
+    font-size:9px !important;
+  }
+  .previewCell .lbl-price{ font-size:13px !important; }
+  .previewCell .lbl-barcode-num{ font-size:11px !important; }
+  .previewEditWrap{
+    width:100%;
+    display:flex;
+    flex-direction:column;
+    gap:3px;
+    justify-content:center;
+  }
+  .previewEditWrap input{
+    width:100%;
+    font-size:10.5px;
+    padding:3px 4px;
+    border:1px solid var(--amber);
+    border-radius:4px;
+    font-family:inherit;
+    box-sizing:border-box;
+  }
+  .previewEditWrap .previewEditBtns{
+    display:flex;
+    gap:4px;
+    margin-top:2px;
+  }
+  .previewEditWrap button{
+    flex:1;
+    font-size:10px;
+    padding:3px 0;
+    border:none;
+    border-radius:4px;
+    cursor:pointer;
+    font-weight:700;
+  }
+  .previewEditWrap .peSave{ background:var(--good); color:#fff; }
+  .previewEditWrap .peCancel{ background:#eee; color:var(--ink-soft); }
 </style>
 </head>
 <body>
@@ -420,6 +508,10 @@
   <!-- RIGHT: saved products -->
   <div class="card">
     <h2 style="display:flex; align-items:center; justify-content:space-between;">Хадгалсан бараанууд <button type="button" id="refreshBtn" style="flex:none; font-size:12px; padding:5px 10px; border-radius:6px; border:1.5px solid #e0d2b3; background:#efe7d8; color:var(--amber-deep); font-weight:700; cursor:pointer;">⟳ Шинэчлэх</button></h2>
+    <div class="tabbar">
+      <button type="button" class="tab-btn active" id="tabUnprinted">Хэвлэгдээгүй</button>
+      <button type="button" class="tab-btn" id="tabPrinted">Хэвлэгдсэн</button>
+    </div>
     <input class="search" id="searchBox" placeholder="Нэр эсвэл баркодоор хайх...">
     <div id="productListWrap">
       <div class="empty-list">Одоогоор хадгалсан бараа алга</div>
@@ -427,7 +519,7 @@
     <div class="btnbar" style="margin-top:12px;">
       <button class="btn-print" id="printSelectedBtn" disabled>Сонгосныг A4 дээр хэвлэх (0)</button>
     </div>
-    <div class="hint">Хэдэн ч бараа сонговол нэг А4 хуудсанд 8 шошгоор багтааж, хэрэгтэй бол хэд хэдэн хуудас болгож хэвлэнэ. Хэвлэсний дараа тасалж авна.</div>
+    <div class="hint">Хэдэн ч бараа сонговол нэг А4 хуудсанд 8 шошгоор багтааж, хэрэгтэй бол хэд хэдэн хуудас болгож хэвлэнэ. Хэвлэсний дараа тасалж авна. Хэвлэсэн бараа автоматаар "Хэвлэгдсэн" таб руу шилжинэ, хүсвэл дахин хэвлэх боломжтой.</div>
   </div>
 
 </div>
@@ -446,7 +538,21 @@
   </div>
 </div>
 
-<!-- hidden print target: JS fills this with one or more .a4Page grids of 6 labels each -->
+<!-- print preview modal: хэдэн хуудас болохыг харах, хэвлэхээсээ өмнө засварлах -->
+<div id="previewModal" style="display:none; position:fixed; inset:0; background:rgba(20,17,13,0.92); z-index:998; flex-direction:column; align-items:center; overflow-y:auto; padding:20px 0 40px;">
+  <div style="width:100%; max-width:760px; padding:0 16px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:8px;">
+      <span id="previewPageInfo" style="color:#f2ece0; font-size:14px; font-weight:600;"></span>
+      <div style="display:flex; gap:8px;">
+        <button type="button" id="previewCancelBtn" style="background:#3a332b; color:#f2ece0; border:none; border-radius:6px; padding:9px 14px; font-size:13px; cursor:pointer;">Цуцлах</button>
+        <button type="button" id="previewPrintBtn" style="background:var(--amber); color:#fff; border:none; border-radius:6px; padding:9px 16px; font-size:13px; font-weight:700; cursor:pointer;">🖨️ Хэвлэх</button>
+      </div>
+    </div>
+    <div id="previewPagesWrap"></div>
+  </div>
+</div>
+
+<!-- hidden print target: JS fills this with one or more .a4Page grids of 8 labels each -->
 <div id="printArea" class="printhost"></div>
 
 <script>
@@ -526,7 +632,7 @@ async function loadAll() {
     const rows = await res.json();
     db = {};
     rows.forEach(r => {
-      db[r.barcode] = { name: r.name, price: r.price, weight: r.weight };
+      db[r.barcode] = { name: r.name, price: r.price, weight: r.weight, printed: !!r.printed };
     });
     statusMsg.textContent = '';
   } catch (e) {
@@ -596,16 +702,20 @@ barcodeInput.addEventListener('keydown', (e) => {
 
 // Sheet руу нэг барааг хадгалах (шинэ болон засварыг хоёуланг нь дэмждэг — барааны
 // баркод хэдийн байгаа бол мөрийг update хийж, байхгүй бол шинээр нэмнэ)
-async function saveRecord(code, name, price, weight) {
+// printed параметрийг өгөхгүй бол одоо байгаа "хэвлэгдсэн" статусыг хэвээр хадгална
+async function saveRecord(code, name, price, weight, printed) {
+  if (printed === undefined) {
+    printed = db[code] ? !!db[code].printed : false;
+  }
   try {
     const res = await fetch(SHEET_API_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ action: 'save', barcode: code, name, price, weight })
+      body: JSON.stringify({ action: 'save', barcode: code, name, price, weight, printed: printed ? '1' : '' })
     });
     const result = await res.json();
     if (!result.ok) throw new Error(result.error || 'unknown');
-    db[code] = { name, price, weight };
+    db[code] = { name, price, weight, printed };
     return { ok: true };
   } catch (e) {
     return { ok: false, error: e.message };
@@ -654,28 +764,128 @@ document.getElementById('printBtn').addEventListener('click', () => {
   printLabels([{ code, name, price, weight }]);
 });
 
-// Нэг буюу хэд хэдэн барааг A4 хуудсанд (2 багана × 4 мөр = 8 шошго/хуудас, ~80×60мм хэвтээ тус бүр) хэвлэх
+// Нэг хуудсанд багтах шошгоны тоо (2 багана × 4 мөр)
+const PER_PAGE = 8;
+let pendingPrintItems = []; // урьдчилан харах цонх дотор засварлаж болох, хэвлэхээр бэлтгэсэн жагсаалт
+let previewEditingIndex = null; // одоо урьдчилан харах цонхонд засварлаж буй item-ийн индекс
+
+// Нэг буюу хэд хэдэн барааг сонговол эхлээд урьдчилан харах цонх нээгддэг (хуудасны тоог харах, засварлах боломжтой)
 function printLabels(items) {
   if (!items || items.length === 0) return;
-  const printAreaEl = document.getElementById('printArea');
+  pendingPrintItems = items.map(it => ({ ...it }));
+  previewEditingIndex = null;
+  openPrintPreview();
+}
+
+function openPrintPreview() {
+  renderPrintPreview();
+  document.getElementById('previewModal').style.display = 'flex';
+}
+
+function closePrintPreview() {
+  document.getElementById('previewModal').style.display = 'none';
+}
+
+function buildCellHtml(item, store) {
+  return `
+    <div class="lbl-content">
+      <div class="lbl-name">${escapeHtml(item.name || '')}${item.weight ? ' ' + escapeHtml(item.weight) : ''}</div>
+      <div class="lbl-price">${item.price ? escapeHtml(item.price) + '₮' : ''}</div>
+      <div class="lbl-barcode"><div class="lbl-barcode-num">${escapeHtml(item.code || '')}</div></div>
+      <div class="lbl-store">${escapeHtml(store)}</div>
+    </div>`;
+}
+
+function renderPrintPreview() {
   const store = storeNameInput.value.trim();
-  const PER_PAGE = 8;
-  let pagesHtml = '';
-  for (let i = 0; i < items.length; i += PER_PAGE) {
-    const chunk = items.slice(i, i + PER_PAGE);
-    let cellsHtml = '';
-    chunk.forEach(item => {
-      cellsHtml += `
-        <div class="a4Cell">
-          <div class="lbl-content">
-            <div class="lbl-name">${escapeHtml(item.name || '')}${item.weight ? ' ' + escapeHtml(item.weight) : ''}</div>
-            <div class="lbl-price">${item.price ? escapeHtml(item.price) + '₮' : ''}</div>
-            <div class="lbl-barcode"><div class="lbl-barcode-num">${escapeHtml(item.code || '')}</div></div>
-            <div class="lbl-store">${escapeHtml(store)}</div>
+  const wrap = document.getElementById('previewPagesWrap');
+  const totalPages = Math.ceil(pendingPrintItems.length / PER_PAGE);
+  document.getElementById('previewPageInfo').textContent =
+    'Нийт ' + totalPages + ' хуудас · ' + pendingPrintItems.length + ' шошго (хуудас бүрт ' + PER_PAGE + ' хүртэл) — нүд дээр дарж засварлана уу';
+
+  let html = '';
+  for (let p = 0; p < totalPages; p++) {
+    const startIdx = p * PER_PAGE;
+    const chunk = pendingPrintItems.slice(startIdx, startIdx + PER_PAGE);
+    html += `<div class="previewPageLabel">Хуудас ${p + 1} / ${totalPages}</div><div class="previewPage">`;
+    for (let j = 0; j < PER_PAGE; j++) {
+      const flatIdx = startIdx + j;
+      if (j >= chunk.length) {
+        html += '<div class="previewCell"></div>';
+        continue;
+      }
+      const item = chunk[j];
+      if (flatIdx === previewEditingIndex) {
+        html += `<div class="previewCell editing" data-idx="${flatIdx}">
+          <div class="previewEditWrap">
+            <input class="pe-name" type="text" value="${escapeHtml(item.name || '')}" placeholder="Нэр">
+            <input class="pe-weight" type="text" value="${escapeHtml(item.weight || '')}" placeholder="жин/хэмжээ">
+            <input class="pe-price" type="text" inputmode="numeric" value="${escapeHtml(item.price || '')}" placeholder="Үнэ">
+            <div class="previewEditBtns">
+              <button type="button" class="peSave" data-idx="${flatIdx}">Хадгалах</button>
+              <button type="button" class="peCancel" data-idx="${flatIdx}">Болих</button>
+            </div>
           </div>
         </div>`;
+      } else {
+        html += `<div class="previewCell" data-idx="${flatIdx}">${buildCellHtml(item, store)}</div>`;
+      }
+    }
+    html += '</div>';
+  }
+  wrap.innerHTML = html;
+  applyFontSizes();
+
+  wrap.querySelectorAll('.previewCell:not(.editing)').forEach(cell => {
+    cell.addEventListener('click', () => {
+      previewEditingIndex = parseInt(cell.getAttribute('data-idx'), 10);
+      renderPrintPreview();
     });
-    // Хуудасны сүүлийн нүднүүдийг хоосон үлдээж (тасдах шугам тогтмол хэвээр байлгана)
+  });
+  wrap.querySelectorAll('.peSave').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const idx = parseInt(btn.getAttribute('data-idx'), 10);
+      const cell = btn.closest('.previewCell');
+      pendingPrintItems[idx].name = cell.querySelector('.pe-name').value.trim();
+      pendingPrintItems[idx].weight = cell.querySelector('.pe-weight').value.trim();
+      pendingPrintItems[idx].price = cell.querySelector('.pe-price').value.trim();
+      previewEditingIndex = null;
+      renderPrintPreview();
+    });
+  });
+  wrap.querySelectorAll('.peCancel').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      previewEditingIndex = null;
+      renderPrintPreview();
+    });
+  });
+}
+
+document.getElementById('previewCancelBtn').addEventListener('click', closePrintPreview);
+
+// Сонгосон баркодуудыг "хэвлэгдсэн" гэж тэмдэглэж, Sheet рүү хадгалах (нэр/үнэ/жин өөрчлөгдөхгүй)
+async function markItemsPrinted(codes) {
+  const uniqueCodes = Array.from(new Set(codes)).filter(c => c && db[c]);
+  if (uniqueCodes.length === 0) return;
+  uniqueCodes.forEach(c => { db[c].printed = true; }); // дэлгэц дээр шууд шинэчлэгдэнэ
+  renderList(document.getElementById('searchBox').value.trim());
+  await Promise.all(uniqueCodes.map(c =>
+    saveRecord(c, db[c].name, db[c].price, db[c].weight, true)
+  ));
+}
+
+document.getElementById('previewPrintBtn').addEventListener('click', () => {
+  const printAreaEl = document.getElementById('printArea');
+  const store = storeNameInput.value.trim();
+  let pagesHtml = '';
+  for (let i = 0; i < pendingPrintItems.length; i += PER_PAGE) {
+    const chunk = pendingPrintItems.slice(i, i + PER_PAGE);
+    let cellsHtml = '';
+    chunk.forEach(item => {
+      cellsHtml += `<div class="a4Cell">${buildCellHtml(item, store)}</div>`;
+    });
     for (let j = chunk.length; j < PER_PAGE; j++) {
       cellsHtml += '<div class="a4Cell"></div>';
     }
@@ -683,8 +893,11 @@ function printLabels(items) {
   }
   printAreaEl.innerHTML = pagesHtml;
   applyFontSizes();
+  closePrintPreview();
   window.print();
-}
+  // Хэвлэсэн бараануудыг "Хэвлэгдсэн" таб руу шилжүүлнэ (Sheet-т ч хадгалагдана)
+  markItemsPrinted(pendingPrintItems.map(it => it.code));
+});
 
 let editingCode = null; // одоо засварлаж буй барааны баркод (эсвэл null)
 let selectedCodes = new Set(); // A4 дээр хамтад нь хэвлэхээр чеклэсэн баркодууд
@@ -696,19 +909,42 @@ function updatePrintSelectedBtn() {
   btn.disabled = n === 0;
 }
 
+let currentTab = 'unprinted'; // 'unprinted' | 'printed'
+
+function updateTabButtons() {
+  const nUnprinted = Object.keys(db).filter(c => !db[c].printed).length;
+  const nPrinted = Object.keys(db).filter(c => db[c].printed).length;
+  document.getElementById('tabUnprinted').textContent = 'Хэвлэгдээгүй (' + nUnprinted + ')';
+  document.getElementById('tabPrinted').textContent = 'Хэвлэгдсэн (' + nPrinted + ')';
+  document.getElementById('tabUnprinted').classList.toggle('active', currentTab === 'unprinted');
+  document.getElementById('tabPrinted').classList.toggle('active', currentTab === 'printed');
+}
+
+document.getElementById('tabUnprinted').addEventListener('click', () => {
+  currentTab = 'unprinted';
+  renderList(document.getElementById('searchBox').value.trim());
+});
+document.getElementById('tabPrinted').addEventListener('click', () => {
+  currentTab = 'printed';
+  renderList(document.getElementById('searchBox').value.trim());
+});
+
 function renderList(filter) {
   const wrap = document.getElementById('productListWrap');
   // устгагдсан барааны сонголтыг цэвэрлэнэ
   selectedCodes.forEach(c => { if (!db[c]) selectedCodes.delete(c); });
+  updateTabButtons();
 
   const codes = Object.keys(db).filter(c => {
+    if (!!db[c].printed !== (currentTab === 'printed')) return false;
     if (!filter) return true;
     const f = filter.toLowerCase();
     return c.includes(f) || (db[c].name || '').toLowerCase().includes(f);
   }).sort((a,b) => (db[a].name||'').localeCompare(db[b].name||''));
 
   if (codes.length === 0) {
-    wrap.innerHTML = '<div class="empty-list">' + (filter ? 'Илэрц олдсонгүй' : 'Одоогоор хадгалсан бараа алга') + '</div>';
+    const emptyMsg = filter ? 'Илэрц олдсонгүй' : (currentTab === 'printed' ? 'Хэвлэгдсэн бараа алга' : 'Хэвлэгдээгүй бараа алга');
+    wrap.innerHTML = '<div class="empty-list">' + emptyMsg + '</div>';
     updatePrintSelectedBtn();
     return;
   }
@@ -739,6 +975,7 @@ function renderList(filter) {
         <td class="num">${p.price ? escapeHtml(p.price)+'₮' : '—'}</td>
         <td class="row-actions">
           <button class="mini-btn mini-print" data-code="${escapeHtml(code)}">Хэвлэх</button>
+          ${currentTab === 'printed' ? `<button class="mini-btn mini-undo" data-code="${escapeHtml(code)}">↺ Буцаах</button>` : ''}
           <button class="mini-btn mini-edit" data-code="${escapeHtml(code)}">Засах</button>
           <button class="mini-btn mini-del" data-code="${escapeHtml(code)}">Устгах</button>
         </td>
@@ -782,6 +1019,16 @@ function renderList(filter) {
       const code = btn.getAttribute('data-code');
       const p = db[code];
       printLabels([{ code, name: p.name, price: p.price || '0', weight: p.weight || '' }]);
+    });
+  });
+
+  wrap.querySelectorAll('.mini-undo').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const code = btn.getAttribute('data-code');
+      const p = db[code];
+      btn.disabled = true;
+      await saveRecord(code, p.name, p.price, p.weight, false);
+      renderList(document.getElementById('searchBox').value.trim());
     });
   });
 
