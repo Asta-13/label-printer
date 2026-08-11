@@ -159,10 +159,10 @@
     border-radius:2px;
     background:#fff;
     display:flex;
-    padding:3mm 4mm;
-    transform:scale(1.55);
+    padding:4mm 6mm;
+    transform:scale(1.3);
     transform-origin:center;
-    margin:34px 0 30px;
+    margin:30px 0 26px;
     overflow:hidden;
     box-sizing:border-box;
   }
@@ -299,34 +299,18 @@
   .settingsBox summary::-webkit-details-marker{display:none;}
   .settingsBox[open] summary{margin-bottom:2px;}
   .settings-inner{padding:2px 0 14px;}
-  .settings-inner select{
-    width:100%;
-    font-size:14px;
-    padding:9px 10px;
-    border:1.5px solid var(--line);
-    border-radius:8px;
-    background:#fff;
-    color:var(--ink);
-    font-family:inherit;
-    margin-bottom:2px;
-  }
   .settings-inner label{margin:10px 0 4px;}
   .settings-inner .hint{margin-top:8px;}
 
-  /* ---- PRINT ---- */
+  /* ---- PRINT: A4, 8 шошго нэг хуудсанд (2 багана × 4 мөр, шошго бүр яг 80×60мм хэвтээ), тасдах шугамтай ---- */
   @media print{
+    @page{ size: A4; margin: 28.5mm 25mm; }
     body *{ visibility:hidden; }
     #printArea, #printArea *{ visibility:visible; }
     #printArea{
       position:fixed;
       left:0; top:0;
-      width:80mm; height:60mm;
-      display:flex;
-      padding:3mm 4mm;
       margin:0;
-      box-sizing:border-box;
-      overflow:hidden;
-      min-height:0;
     }
     .topbar, .wrap > *:not(.printhost){ display:none !important; }
   }
@@ -335,23 +319,32 @@
       position:absolute;
       left:-9999px;
       top:0;
-      width:80mm;
-      height:60mm;
-      display:flex;
-      padding:3mm 4mm;
-      box-sizing:border-box;
     }
   }
-</style>
-<style id="dynamicPageSize">
-@media print{ @page{ size: 80mm 60mm; margin:0; } }
+  .a4Page{
+    width:160mm;
+    height:240mm;
+    display:grid;
+    grid-template-columns:repeat(2, 1fr);
+    grid-template-rows:repeat(4, 1fr);
+    box-sizing:border-box;
+    page-break-after:always;
+  }
+  .a4Page:last-child{ page-break-after:auto; }
+  .a4Cell{
+    border:1px dashed #999;
+    display:flex;
+    padding:4mm 6mm;
+    box-sizing:border-box;
+    overflow:hidden;
+  }
 </style>
 </head>
 <body>
 
 <div class="topbar">
   <h1>Үнийн шошго хэвлэгч</h1>
-  <span>Хэмжээ, фонт өөрөө тохируулах боломжтой · Ямар ч принтер дээр хэвлэнэ</span>
+  <span>А4 цаасан дээр 8 шошгоор хэвлэнэ · Сонгосон бараагаа нийлүүлж хэвлэх боломжтой</span>
 </div>
 
 <div class="wrap">
@@ -361,27 +354,8 @@
     <h2>Бараа оруулах</h2>
 
     <details class="settingsBox" id="settingsBox">
-      <summary>⚙️ Шошгоны хэмжээ, фонт тохиргоо</summary>
+      <summary>⚙️ Фонт тохиргоо</summary>
       <div class="settings-inner">
-        <label for="labelPreset">Шошгоны хэмжээ</label>
-        <select id="labelPreset">
-          <option value="80x60">80 × 60 мм (стандарт)</option>
-          <option value="58x40">58 × 40 мм</option>
-          <option value="50x30">50 × 30 мм</option>
-          <option value="40x30">40 × 30 мм</option>
-          <option value="30x20">30 × 20 мм</option>
-          <option value="custom">Өөрөө оруулах...</option>
-        </select>
-        <div class="row2">
-          <div>
-            <label for="labelWidth">Өргөн (мм)</label>
-            <input id="labelWidth" type="number" min="10" max="300" value="80" inputmode="decimal">
-          </div>
-          <div>
-            <label for="labelHeight">Өндөр (мм)</label>
-            <input id="labelHeight" type="number" min="10" max="300" value="60" inputmode="decimal">
-          </div>
-        </div>
         <div class="row2">
           <div>
             <label for="fontName">Нэрний фонт (px)</label>
@@ -402,7 +376,7 @@
             <input id="fontStore" type="number" min="6" max="60" value="14" inputmode="decimal">
           </div>
         </div>
-        <div class="hint">Тохиргоо энэ төхөөрөмж дээр автоматаар хадгалагдаж, урьдчилсан харагдац болон хэвлэх үед шууд ашиглагдана. Ямар ч принтер эсвэл лэйбл принтер дээр яг тохируулсан хэмжээгээрээ гарна.</div>
+        <div class="hint">Хэвлэхэд А4 цаасан дээр 8 шошго (2 багана × 4 мөр, шошго тус бүр ~80×60мм хэвтээ) багтаж, тасдах шугамтай гарна. Фонтын хэмжээ энэ төхөөрөмж дээр автоматаар хадгалагдана.</div>
       </div>
     </details>
 
@@ -438,7 +412,7 @@
 
     <div class="btnbar">
       <button class="btn-save" id="saveBtn">Санд хадгалах</button>
-      <button class="btn-print" id="printBtn">Шошго хэвлэх</button>
+      <button class="btn-print" id="printBtn">A4 дээр хэвлэх</button>
     </div>
     <div class="status" id="statusMsg"></div>
   </div>
@@ -450,6 +424,10 @@
     <div id="productListWrap">
       <div class="empty-list">Одоогоор хадгалсан бараа алга</div>
     </div>
+    <div class="btnbar" style="margin-top:12px;">
+      <button class="btn-print" id="printSelectedBtn" disabled>Сонгосныг A4 дээр хэвлэх (0)</button>
+    </div>
+    <div class="hint">Хэдэн ч бараа сонговол нэг А4 хуудсанд 8 шошгоор багтааж, хэрэгтэй бол хэд хэдэн хуудас болгож хэвлэнэ. Хэвлэсний дараа тасалж авна.</div>
   </div>
 
 </div>
@@ -468,15 +446,8 @@
   </div>
 </div>
 
-<!-- hidden print target -->
-<div id="printArea" class="printhost">
-  <div class="lbl-content">
-    <div class="lbl-name" id="pName"></div>
-    <div class="lbl-price" id="pPrice"></div>
-    <div class="lbl-barcode"><div class="lbl-barcode-num" id="pBarcode"></div></div>
-    <div class="lbl-store" id="pStore"></div>
-  </div>
-</div>
+<!-- hidden print target: JS fills this with one or more .a4Page grids of 6 labels each -->
+<div id="printArea" class="printhost"></div>
 
 <script>
 const KEY_PREFIX = 'product:';
@@ -503,60 +474,28 @@ storeNameInput.addEventListener('input', () => {
   renderPreview();
 });
 
-// ---- Dynamic label size & font settings (works with any printer / label size) ----
-const DEFAULT_LABEL_SETTINGS = { width:80, height:60, fontName:12, fontPrice:19, fontBarcode:22, fontStore:14 };
+// ---- Font-size settings (label size itself is now fixed: A4, 6-up grid) ----
+const DEFAULT_LABEL_SETTINGS = { fontName:12, fontPrice:19, fontBarcode:22, fontStore:14 };
 let labelSettings = { ...DEFAULT_LABEL_SETTINGS };
 try {
   const savedSettings = JSON.parse(localStorage.getItem('labelSettings') || 'null');
   if (savedSettings) labelSettings = { ...DEFAULT_LABEL_SETTINGS, ...savedSettings };
 } catch(e) {}
 
-const labelPresetEl = document.getElementById('labelPreset');
-const labelWidthEl = document.getElementById('labelWidth');
-const labelHeightEl = document.getElementById('labelHeight');
 const fontNameEl = document.getElementById('fontName');
 const fontPriceEl = document.getElementById('fontPrice');
 const fontBarcodeEl = document.getElementById('fontBarcode');
 const fontStoreEl = document.getElementById('fontStore');
-const dynamicPageSizeEl = document.getElementById('dynamicPageSize');
-const printAreaEl = document.getElementById('printArea');
-
-const MM_TO_PX = 3.7795;
-
-function syncPresetDropdown() {
-  const key = labelSettings.width + 'x' + labelSettings.height;
-  const known = Array.from(labelPresetEl.options).some(o => o.value === key);
-  labelPresetEl.value = known ? key : 'custom';
-}
 
 function loadSettingsIntoInputs() {
-  labelWidthEl.value = labelSettings.width;
-  labelHeightEl.value = labelSettings.height;
   fontNameEl.value = labelSettings.fontName;
   fontPriceEl.value = labelSettings.fontPrice;
   fontBarcodeEl.value = labelSettings.fontBarcode;
   fontStoreEl.value = labelSettings.fontStore;
-  syncPresetDropdown();
 }
 
 function saveLabelSettings() {
   try { localStorage.setItem('labelSettings', JSON.stringify(labelSettings)); } catch(e) {}
-}
-
-function computePreviewScale(w, h) {
-  let s = Math.min(1.55, 470 / (w * MM_TO_PX), 520 / (h * MM_TO_PX));
-  if (!isFinite(s) || s <= 0) s = 1;
-  return s;
-}
-
-function applyLabelDimensions() {
-  const w = labelSettings.width, h = labelSettings.height;
-  previewLabel.style.width = w + 'mm';
-  previewLabel.style.height = h + 'mm';
-  previewLabel.style.transform = 'scale(' + computePreviewScale(w, h) + ')';
-  printAreaEl.style.width = w + 'mm';
-  printAreaEl.style.height = h + 'mm';
-  dynamicPageSizeEl.textContent = '@media print{ @page{ size: ' + w + 'mm ' + h + 'mm; margin:0; } }';
 }
 
 function applyFontSizes() {
@@ -567,29 +506,16 @@ function applyFontSizes() {
 }
 
 function onLabelSettingsChange() {
-  labelSettings.width = parseFloat(labelWidthEl.value) || DEFAULT_LABEL_SETTINGS.width;
-  labelSettings.height = parseFloat(labelHeightEl.value) || DEFAULT_LABEL_SETTINGS.height;
   labelSettings.fontName = parseFloat(fontNameEl.value) || DEFAULT_LABEL_SETTINGS.fontName;
   labelSettings.fontPrice = parseFloat(fontPriceEl.value) || DEFAULT_LABEL_SETTINGS.fontPrice;
   labelSettings.fontBarcode = parseFloat(fontBarcodeEl.value) || DEFAULT_LABEL_SETTINGS.fontBarcode;
   labelSettings.fontStore = parseFloat(fontStoreEl.value) || DEFAULT_LABEL_SETTINGS.fontStore;
   saveLabelSettings();
-  syncPresetDropdown();
-  applyLabelDimensions();
   applyFontSizes();
 }
 
-[labelWidthEl, labelHeightEl, fontNameEl, fontPriceEl, fontBarcodeEl, fontStoreEl].forEach(el => {
+[fontNameEl, fontPriceEl, fontBarcodeEl, fontStoreEl].forEach(el => {
   el.addEventListener('input', onLabelSettingsChange);
-});
-
-labelPresetEl.addEventListener('change', () => {
-  const val = labelPresetEl.value;
-  if (val === 'custom') return;
-  const parts = val.split('x');
-  labelWidthEl.value = parts[0];
-  labelHeightEl.value = parts[1];
-  onLabelSettingsChange();
 });
 
 async function loadAll() {
@@ -725,21 +651,56 @@ document.getElementById('printBtn').addEventListener('click', () => {
     statusMsg.textContent = 'Нэр болон үнийг оруулна уу.';
     return;
   }
-  printLabel(code, name, price, weight);
+  printLabels([{ code, name, price, weight }]);
 });
 
-function printLabel(code, name, price, weight) {
-  document.getElementById('pName').textContent = name + (weight ? ' ' + weight : '');
-  document.getElementById('pPrice').textContent = price + '₮';
-  document.getElementById('pStore').textContent = storeNameInput.value.trim();
-  document.getElementById('pBarcode').textContent = code;
+// Нэг буюу хэд хэдэн барааг A4 хуудсанд (2 багана × 4 мөр = 8 шошго/хуудас, ~80×60мм хэвтээ тус бүр) хэвлэх
+function printLabels(items) {
+  if (!items || items.length === 0) return;
+  const printAreaEl = document.getElementById('printArea');
+  const store = storeNameInput.value.trim();
+  const PER_PAGE = 8;
+  let pagesHtml = '';
+  for (let i = 0; i < items.length; i += PER_PAGE) {
+    const chunk = items.slice(i, i + PER_PAGE);
+    let cellsHtml = '';
+    chunk.forEach(item => {
+      cellsHtml += `
+        <div class="a4Cell">
+          <div class="lbl-content">
+            <div class="lbl-name">${escapeHtml(item.name || '')}${item.weight ? ' ' + escapeHtml(item.weight) : ''}</div>
+            <div class="lbl-price">${item.price ? escapeHtml(item.price) + '₮' : ''}</div>
+            <div class="lbl-barcode"><div class="lbl-barcode-num">${escapeHtml(item.code || '')}</div></div>
+            <div class="lbl-store">${escapeHtml(store)}</div>
+          </div>
+        </div>`;
+    });
+    // Хуудасны сүүлийн нүднүүдийг хоосон үлдээж (тасдах шугам тогтмол хэвээр байлгана)
+    for (let j = chunk.length; j < PER_PAGE; j++) {
+      cellsHtml += '<div class="a4Cell"></div>';
+    }
+    pagesHtml += `<div class="a4Page">${cellsHtml}</div>`;
+  }
+  printAreaEl.innerHTML = pagesHtml;
+  applyFontSizes();
   window.print();
 }
 
 let editingCode = null; // одоо засварлаж буй барааны баркод (эсвэл null)
+let selectedCodes = new Set(); // A4 дээр хамтад нь хэвлэхээр чеклэсэн баркодууд
+
+function updatePrintSelectedBtn() {
+  const btn = document.getElementById('printSelectedBtn');
+  const n = selectedCodes.size;
+  btn.textContent = 'Сонгосныг A4 дээр хэвлэх (' + n + ')';
+  btn.disabled = n === 0;
+}
 
 function renderList(filter) {
   const wrap = document.getElementById('productListWrap');
+  // устгагдсан барааны сонголтыг цэвэрлэнэ
+  selectedCodes.forEach(c => { if (!db[c]) selectedCodes.delete(c); });
+
   const codes = Object.keys(db).filter(c => {
     if (!filter) return true;
     const f = filter.toLowerCase();
@@ -748,14 +709,16 @@ function renderList(filter) {
 
   if (codes.length === 0) {
     wrap.innerHTML = '<div class="empty-list">' + (filter ? 'Илэрц олдсонгүй' : 'Одоогоор хадгалсан бараа алга') + '</div>';
+    updatePrintSelectedBtn();
     return;
   }
 
-  let html = '<table><thead><tr><th>Нэр</th><th>Үнэ</th><th></th></tr></thead><tbody>';
+  let html = '<table><thead><tr><th style="width:30px;"><input type="checkbox" id="selectAllCheck"></th><th>Нэр</th><th>Үнэ</th><th></th></tr></thead><tbody>';
   for (const code of codes) {
     const p = db[code];
     if (code === editingCode) {
       html += `<tr data-code="${escapeHtml(code)}">
+        <td></td>
         <td>
           <input class="edit-field edit-name" type="text" value="${escapeHtml(p.name||'')}" placeholder="Барааны нэр">
           <input class="edit-field secondary edit-weight" type="text" value="${escapeHtml(p.weight||'')}" placeholder="жин/хэмжээ (заавал биш)">
@@ -771,6 +734,7 @@ function renderList(filter) {
       </tr>`;
     } else {
       html += `<tr>
+        <td><input type="checkbox" class="row-check" data-code="${escapeHtml(code)}" ${selectedCodes.has(code) ? 'checked' : ''}></td>
         <td>${escapeHtml(p.name||'')}${p.weight ? ' <span style="color:#a99;font-size:12px;">('+escapeHtml(p.weight)+')</span>' : ''}<br><span style="color:#a99;font-size:11px;">${escapeHtml(code)}</span></td>
         <td class="num">${p.price ? escapeHtml(p.price)+'₮' : '—'}</td>
         <td class="row-actions">
@@ -783,12 +747,41 @@ function renderList(filter) {
   }
   html += '</tbody></table>';
   wrap.innerHTML = html;
+  updatePrintSelectedBtn();
+
+  const selectAllCheck = document.getElementById('selectAllCheck');
+  if (selectAllCheck) {
+    const visibleCodes = codes.filter(c => c !== editingCode);
+    selectAllCheck.checked = visibleCodes.length > 0 && visibleCodes.every(c => selectedCodes.has(c));
+    selectAllCheck.addEventListener('change', () => {
+      if (selectAllCheck.checked) {
+        visibleCodes.forEach(c => selectedCodes.add(c));
+      } else {
+        visibleCodes.forEach(c => selectedCodes.delete(c));
+      }
+      renderList(document.getElementById('searchBox').value.trim());
+    });
+  }
+
+  wrap.querySelectorAll('.row-check').forEach(chk => {
+    chk.addEventListener('change', () => {
+      const code = chk.getAttribute('data-code');
+      if (chk.checked) selectedCodes.add(code);
+      else selectedCodes.delete(code);
+      updatePrintSelectedBtn();
+      const selectAll = document.getElementById('selectAllCheck');
+      if (selectAll) {
+        const visibleCodes = codes.filter(c => c !== editingCode);
+        selectAll.checked = visibleCodes.length > 0 && visibleCodes.every(c => selectedCodes.has(c));
+      }
+    });
+  });
 
   wrap.querySelectorAll('.mini-print').forEach(btn => {
     btn.addEventListener('click', () => {
       const code = btn.getAttribute('data-code');
       const p = db[code];
-      printLabel(code, p.name, p.price || '0', p.weight || '');
+      printLabels([{ code, name: p.name, price: p.price || '0', weight: p.weight || '' }]);
     });
   });
 
@@ -854,8 +847,15 @@ document.getElementById('searchBox').addEventListener('input', (e) => {
 
 document.getElementById('refreshBtn').addEventListener('click', loadAll);
 
+document.getElementById('printSelectedBtn').addEventListener('click', () => {
+  const items = Array.from(selectedCodes)
+    .filter(code => db[code])
+    .map(code => ({ code, name: db[code].name || '', price: db[code].price || '0', weight: db[code].weight || '' }));
+  if (items.length === 0) return;
+  printLabels(items);
+});
+
 loadSettingsIntoInputs();
-applyLabelDimensions();
 applyFontSizes();
 renderPreview();
 
